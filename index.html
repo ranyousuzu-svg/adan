@@ -1085,7 +1085,7 @@ auth.onAuthStateChanged(async user => {
   if (user) {
     currentUser = user;
     document.getElementById('lock-screen').style.display = 'none';
-    await loadFromFirestore();
+    loadFromFirestore();
     const today = new Date().toISOString().split('T')[0];
     ['s-date','e-date'].forEach(id => { const el = document.getElementById(id); if(el) el.value = today; });
     renderDashboard();
@@ -1095,17 +1095,17 @@ auth.onAuthStateChanged(async user => {
   }
 });
 
-async function loadFromFirestore() {
+function loadFromFirestore() {
   if (!currentUser) return;
-  try {
-    const doc = await db.collection('users').doc(currentUser.uid).get();
+  db.collection('users').doc(currentUser.uid).onSnapshot(doc => {
     if (doc.exists) {
       const data = doc.data();
       const keys = ['costs','sales','expenses','finished_stock','materials','events','plan'];
       keys.forEach(k => { if (data[k] !== undefined) localStorage.setItem('adan_' + k, JSON.stringify(data[k])); });
+      renderDashboard();
       toast('データを同期しました');
     }
-  } catch(e) { console.error('Firestore読み込みエラー', e); }
+  }, e => { console.error('Firestore同期エラー', e); });
 }
 
 async function saveToFirestore() {
