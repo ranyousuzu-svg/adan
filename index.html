@@ -186,6 +186,20 @@
   .mt { margin-top: 16px; }
   .flex-end { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
 
+  #sync-bar {
+    background: var(--green-pale);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 0.82rem;
+    color: var(--green);
+    border-bottom: 1px solid #b7e4c7;
+  }
+  #sync-bar strong { margin-right: 4px; }
+  #sync-bar label { cursor: pointer; }
+
   #toast {
     position: fixed; bottom: 24px; right: 24px;
     background: var(--green); color: white;
@@ -216,6 +230,16 @@
     <button id="lock-btn" onclick="unlock()">ログイン</button>
     <div id="lock-error">パスワードが違います</div>
   </div>
+</div>
+
+<div id="sync-bar">
+  <strong>🔄 データ同期：</strong>
+  <button class="btn btn-primary btn-sm" onclick="exportData()">📤 エクスポート（バックアップ保存）</button>
+  <label class="btn btn-sm" style="background:#eee;color:#333">
+    📥 インポート（データ読み込み）
+    <input type="file" accept=".json" onchange="importData(event)" style="display:none">
+  </label>
+  <span style="color:#888">スマホでも同じデータを使うには：エクスポート→LINEで自分に送る→スマホでサイトを開いてインポート</span>
 </div>
 
 <header>
@@ -1032,6 +1056,39 @@ function renderDashboard() {
     if (m.qty <= m.min) alerts.push(`<div class="alert alert-warn">⚠️ 材料 <b>${m.name}</b> 補充推奨 (残${m.qty}${m.unit})</div>`);
   });
   document.getElementById('stock-alerts').innerHTML = alerts.length ? alerts.join('') : '<div class="alert alert-ok">在庫は問題ありません ✓</div>';
+}
+
+// ====== EXPORT / IMPORT ======
+function exportData() {
+  const keys = ['costs','sales','expenses','finished_stock','materials','events','plan'];
+  const data = {};
+  keys.forEach(k => { data[k] = load(k, null); });
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `adan_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  toast('バックアップを保存しました');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      const keys = ['costs','sales','expenses','finished_stock','materials','events','plan'];
+      keys.forEach(k => { if (data[k] !== null) save(k, data[k]); });
+      toast('データを読み込みました！');
+      renderDashboard();
+    } catch {
+      alert('ファイルの読み込みに失敗しました');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
 }
 
 // ====== PASSWORD ======
