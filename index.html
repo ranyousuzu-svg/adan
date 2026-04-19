@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADAN Piercing Manager</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root {
+    --green: #2d6a4f;
+    --green-light: #52b788;
+    --green-pale: #d8f3dc;
+    --sand: #f4f1de;
+    --brown: #7c6042;
+    --text: #333;
+    --border: #ccc;
+    --white: #fff;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f0f4f0; color: var(--text); }
+
+  header {
+    background: var(--green);
+    color: white;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  header h1 { font-size: 1.3rem; letter-spacing: 0.05em; }
+  header span { font-size: 0.8rem; opacity: 0.75; }
+
+  nav {
+    background: var(--green-light);
+    display: flex;
+    gap: 2px;
+    padding: 0 16px;
+    flex-wrap: wrap;
+  }
+  nav button {
+    background: none;
+    border: none;
+    color: white;
+    padding: 12px 16px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+  }
+  nav button:hover { background: rgba(255,255,255,0.15); }
+  nav button.active { border-bottom: 3px solid white; background: rgba(255,255,255,0.2); font-weight: bold; }
+
+  main { padding: 20px; max-width: 1100px; margin: 0 auto; }
+
+  section { display: none; }
+  section.active { display: block; }
+
+  .card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .card h2 { font-size: 1rem; color: var(--green); margin-bottom: 16px; border-bottom: 2px solid var(--green-pale); padding-bottom: 8px; }
+  .card h3 { font-size: 0.9rem; color: var(--brown); margin: 12px 0 8px; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media(max-width: 700px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+
+  .stat-box {
+    background: var(--green-pale);
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+  }
+  .stat-box .label { font-size: 0.75rem; color: var(--green); margin-bottom: 4px; }
+  .stat-box .value { font-size: 1.5rem; font-weight: bold; color: var(--green); }
+  .stat-box .sub { font-size: 0.7rem; color: #888; margin-top: 2px; }
+
+  label { display: block; font-size: 0.8rem; color: #666; margin-bottom: 4px; margin-top: 10px; }
+  input, select, textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    background: white;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--green-light); }
+
+  .btn {
+    display: inline-block;
+    padding: 9px 18px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: bold;
+    transition: opacity 0.2s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: var(--green); color: white; }
+  .btn-danger { background: #e74c3c; color: white; padding: 4px 10px; font-size: 0.75rem; }
+  .btn-sm { padding: 5px 10px; font-size: 0.78rem; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th { background: var(--green-pale); color: var(--green); padding: 8px 10px; text-align: left; }
+  td { padding: 8px 10px; border-bottom: 1px solid #eee; }
+  tr:hover td { background: #fafff9; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: bold;
+  }
+  .badge-minne { background: #ffe0ef; color: #c0397a; }
+  .badge-creema { background: #fff3e0; color: #e67e22; }
+  .badge-event { background: #e8f5e9; color: #2d6a4f; }
+  .badge-other { background: #f3e5f5; color: #7b1fa2; }
+
+  .alert { padding: 10px 14px; border-radius: 6px; margin-bottom: 10px; font-size: 0.85rem; }
+  .alert-warn { background: #fff3cd; color: #856404; border: 1px solid #ffc107; }
+  .alert-ok { background: #d4edda; color: #155724; }
+
+  .cost-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .cost-row input { flex: 1; }
+  .cost-row .cost-name { flex: 2; }
+
+  .product-card {
+    border: 2px solid var(--green-pale);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .product-card h3 { color: var(--green); font-size: 0.95rem; margin-bottom: 12px; }
+
+  .profit-bar {
+    height: 8px;
+    border-radius: 4px;
+    background: #eee;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .profit-bar-fill { height: 100%; background: var(--green-light); transition: width 0.5s; }
+
+  .tabs-inner { display: flex; gap: 4px; margin-bottom: 16px; }
+  .tab-btn { padding: 6px 14px; border: 1px solid var(--border); border-radius: 20px; background: white; cursor: pointer; font-size: 0.8rem; }
+  .tab-btn.active { background: var(--green); color: white; border-color: var(--green); }
+
+  .mt { margin-top: 16px; }
+  .flex-end { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+
+  #toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--green); color: white;
+    padding: 10px 20px; border-radius: 8px;
+    font-size: 0.85rem; opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 999;
+  }
+  #toast.show { opacity: 1; }
+
+  .summary-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 0.88rem; }
+  .summary-row:last-child { border: none; font-weight: bold; color: var(--green); }
+
+  .channel-fee { font-size: 0.75rem; color: #888; }
+
+  .stock-warn { color: #e74c3c; font-weight: bold; }
+  .stock-ok { color: var(--green); }
+</style>
+</head>
+<body>
+
+<header>
+  <div>🌿</div>
+  <div>
+    <h1>ADAN Piercing Manager</h1>
+    <span>アダンの葉ピアス 販売管理</span>
+  </div>
+</header>
+
+<nav>
+  <button class="active" onclick="showSection('dashboard')">📊 ダッシュボード</button>
+  <button onclick="showSection('cost')">💰 原価計算</button>
+  <button onclick="showSection('sales')">🛒 売上記録</button>
+  <button onclick="showSection('expenses')">📤 支出記録</button>
+  <button onclick="showSection('inventory')">📦 在庫管理</button>
+  <button onclick="showSection('events')">🎪 イベント管理</button>
+  <button onclick="showSection('plan')">📅 支出計画</button>
+</nav>
+
+<main>
+
+<!-- ダッシュボード -->
+<section id="dashboard" class="active">
+  <div class="grid3">
+    <div class="stat-box">
+      <div class="label">今月の売上</div>
+      <div class="value" id="db-sales">¥0</div>
+      <div class="sub">手数料差引前</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">今月の純利益</div>
+      <div class="value" id="db-profit">¥0</div>
+      <div class="sub">手数料・仕入れ差引後</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">今月の支出</div>
+      <div class="value" id="db-expense">¥0</div>
+      <div class="sub">材料費・その他</div>
+    </div>
+  </div>
+
+  <div class="grid2 mt">
+    <div class="card">
+      <h2>販路別売上（今月）</h2>
+      <canvas id="chartChannel" height="200"></canvas>
+    </div>
+    <div class="card">
+      <h2>商品別売上（今月）</h2>
+      <canvas id="chartProduct" height="200"></canvas>
+    </div>
+  </div>
+
+  <div class="card mt">
+    <h2>月次推移（売上 vs 支出）</h2>
+    <canvas id="chartMonthly" height="120"></canvas>
+  </div>
+
+  <div class="card mt">
+    <h2>⚠️ 在庫アラート</h2>
+    <div id="stock-alerts">在庫は十分です</div>
+  </div>
+</section>
+
+<!-- 原価計算 -->
+<section id="cost">
+  <div class="card">
+    <h2>商品原価計算</h2>
+    <p style="font-size:0.8rem;color:#888;margin-bottom:16px">各商品の材料費・製作時間を入力して原価と推奨価格を算出します</p>
+
+    <div id="product-cost-list"></div>
+
+    <button class="btn btn-primary mt" onclick="saveCosts()">💾 保存</button>
+  </div>
+
+  <div class="card">
+    <h2>原価サマリー</h2>
+    <div id="cost-summary-table"></div>
+  </div>
+</section>
+
+<!-- 売上記録 -->
+<section id="sales">
+  <div class="card">
+    <h2>売上を記録する</h2>
+    <div class="grid2">
+      <div>
+        <label>日付</label>
+        <input type="date" id="s-date">
+        <label>商品</label>
+        <select id="s-product">
+          <option value="yotsudatami">四つ畳編みのピアス</option>
+          <option value="squareknot">スクエアノットのピアス</option>
+          <option value="tbd">未定商品（TBD）</option>
+        </select>
+        <label>数量</label>
+        <input type="number" id="s-qty" value="1" min="1">
+      </div>
+      <div>
+        <label>販路</label>
+        <select id="s-channel">
+          <option value="minne">minne</option>
+          <option value="creema">Creema</option>
+          <option value="event">ハンドメイドマーケット</option>
+          <option value="other">その他</option>
+        </select>
+        <label>販売価格（1個あたり・税込）</label>
+        <input type="number" id="s-price" placeholder="例: 1500">
+        <label>メモ</label>
+        <input type="text" id="s-note" placeholder="任意">
+      </div>
+    </div>
+    <div class="flex-end">
+      <button class="btn btn-primary" onclick="addSale()">＋ 追加</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>売上一覧</h2>
+    <div class="tabs-inner">
+      <button class="tab-btn active" onclick="filterSales('all',this)">すべて</button>
+      <button class="tab-btn" onclick="filterSales('minne',this)">minne</button>
+      <button class="tab-btn" onclick="filterSales('creema',this)">Creema</button>
+      <button class="tab-btn" onclick="filterSales('event',this)">イベント</button>
+    </div>
+    <div id="sales-table"></div>
+  </div>
+</section>
+
+<!-- 支出記録 -->
+<section id="expenses">
+  <div class="card">
+    <h2>支出を記録する</h2>
+    <div class="grid2">
+      <div>
+        <label>日付</label>
+        <input type="date" id="e-date">
+        <label>カテゴリ</label>
+        <select id="e-category">
+          <option value="material">材料費（アダン葉・金具等）</option>
+          <option value="package">梱包材・送料</option>
+          <option value="event-fee">イベント出展費</option>
+          <option value="transport">交通費</option>
+          <option value="tools">道具・備品</option>
+          <option value="other">その他</option>
+        </select>
+      </div>
+      <div>
+        <label>金額（円）</label>
+        <input type="number" id="e-amount" placeholder="例: 2000">
+        <label>内容メモ</label>
+        <input type="text" id="e-note" placeholder="例: アダンの葉 10束">
+      </div>
+    </div>
+    <div class="flex-end">
+      <button class="btn btn-primary" onclick="addExpense()">＋ 追加</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>支出一覧</h2>
+    <div id="expenses-table"></div>
+  </div>
+</section>
+
+<!-- 在庫管理 -->
+<section id="inventory">
+  <div class="card">
+    <h2>完成品在庫</h2>
+    <table>
+      <thead><tr><th>商品名</th><th>在庫数</th><th>最低在庫数</th><th>操作</th></tr></thead>
+      <tbody id="finished-stock-tbody"></tbody>
+    </table>
+    <button class="btn btn-primary mt btn-sm" onclick="saveFinishedStock()">💾 保存</button>
+  </div>
+
+  <div class="card">
+    <h2>材料在庫</h2>
+    <div id="material-list"></div>
+    <button class="btn btn-sm" style="background:#eee;margin-top:8px" onclick="addMaterialRow()">＋ 材料を追加</button>
+    <button class="btn btn-primary mt btn-sm" onclick="saveMaterials()" style="margin-left:8px">💾 保存</button>
+  </div>
+</section>
+
+<!-- イベント管理 -->
+<section id="events">
+  <div class="card">
+    <h2>イベント出展を記録する</h2>
+    <div class="grid2">
+      <div>
+        <label>イベント名</label>
+        <input type="text" id="ev-name" placeholder="例: ○○マルシェ">
+        <label>開催日</label>
+        <input type="date" id="ev-date">
+        <label>出展費（円）</label>
+        <input type="number" id="ev-fee" placeholder="例: 5000">
+      </div>
+      <div>
+        <label>交通費（円）</label>
+        <input type="number" id="ev-transport" placeholder="例: 800">
+        <label>売上合計（円）</label>
+        <input type="number" id="ev-sales" placeholder="イベント終了後に入力">
+        <label>メモ</label>
+        <textarea id="ev-note" rows="2" placeholder="場所・感想など"></textarea>
+      </div>
+    </div>
+    <div class="flex-end">
+      <button class="btn btn-primary" onclick="addEvent()">＋ 追加</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>イベント履歴・採算</h2>
+    <div id="events-table"></div>
+  </div>
+</section>
+
+<!-- 支出計画 -->
+<section id="plan">
+  <div class="card">
+    <h2>月間目標設定</h2>
+    <div class="grid3">
+      <div>
+        <label>目標売上（円）</label>
+        <input type="number" id="plan-sales" placeholder="例: 30000">
+      </div>
+      <div>
+        <label>目標製作数（合計）</label>
+        <input type="number" id="plan-qty" placeholder="例: 20">
+      </div>
+      <div>
+        <label>予算（材料費・円）</label>
+        <input type="number" id="plan-budget" placeholder="例: 5000">
+      </div>
+    </div>
+    <div class="flex-end">
+      <button class="btn btn-primary" onclick="savePlan()">💾 保存</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>今月の進捗</h2>
+    <div id="plan-progress"></div>
+  </div>
+
+  <div class="card">
+    <h2>販路別手数料シミュレーター</h2>
+    <p style="font-size:0.8rem;color:#888;margin-bottom:12px">販売価格を入力すると各販路の手取り額を計算します</p>
+    <label>販売価格（円）</label>
+    <input type="number" id="sim-price" placeholder="例: 1500" oninput="calcSim()">
+    <div id="sim-result" class="mt"></div>
+  </div>
+
+  <div class="card">
+    <h2>材料発注計画</h2>
+    <div id="order-plan"></div>
+  </div>
+</section>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+// ====== DATA ======
+const PRODUCTS = [
+  { id: 'yotsudatami', name: '四つ畳編みのピアス' },
+  { id: 'squareknot',  name: 'スクエアノットのピアス' },
+  { id: 'tbd',         name: '未定商品（TBD）' },
+];
+const CHANNELS = {
+  minne:   { name: 'minne',              fee: 0.10 },
+  creema:  { name: 'Creema',             fee: 0.22 },
+  event:   { name: 'ハンドメイドマーケット', fee: 0 },
+  other:   { name: 'その他',              fee: 0 },
+};
+
+function load(key, def) {
+  try { return JSON.parse(localStorage.getItem('adan_' + key)) ?? def; } catch { return def; }
+}
+function save(key, val) { localStorage.setItem('adan_' + key, JSON.stringify(val)); }
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ====== NAVIGATION ======
+function showSection(id) {
+  document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'cost') renderCost();
+  if (id === 'sales') renderSales();
+  if (id === 'expenses') renderExpenses();
+  if (id === 'inventory') renderInventory();
+  if (id === 'events') renderEvents();
+  if (id === 'plan') renderPlan();
+}
+
+// ====== COST ======
+function renderCost() {
+  const costs = load('costs', {});
+  let html = '';
+  PRODUCTS.forEach(p => {
+    const c = costs[p.id] || { materials: [{ name: 'アダンの葉', cost: 0 }, { name: '金具・パーツ', cost: 0 }], labor_min: 30, hourly: 1000, price: 0 };
+    html += `<div class="product-card">
+      <h3>🌿 ${p.name}</h3>
+      <h4 style="font-size:0.8rem;color:#888;margin-bottom:8px">材料費</h4>
+      <div id="mat-rows-${p.id}">`;
+    c.materials.forEach((m, i) => {
+      html += `<div class="cost-row">
+        <input class="cost-name" type="text" value="${m.name}" id="mat-name-${p.id}-${i}" placeholder="材料名">
+        <input type="number" value="${m.cost}" id="mat-cost-${p.id}-${i}" placeholder="円" style="max-width:100px">
+        <span style="font-size:0.8rem">円</span>
+      </div>`;
+    });
+    html += `</div>
+      <button class="btn btn-sm" style="background:#eee;margin-bottom:12px" onclick="addMatRow('${p.id}')">＋ 材料追加</button>
+      <div class="grid2">
+        <div>
+          <label>製作時間（分）</label>
+          <input type="number" id="labor-${p.id}" value="${c.labor_min}" min="1">
+        </div>
+        <div>
+          <label>自分の時給（円）</label>
+          <input type="number" id="hourly-${p.id}" value="${c.hourly}" min="0">
+        </div>
+      </div>
+      <label>販売希望価格（円）</label>
+      <input type="number" id="price-${p.id}" value="${c.price}" placeholder="例: 1500">
+      <div id="cost-result-${p.id}" style="margin-top:10px;padding:10px;background:#f9f9f9;border-radius:6px;font-size:0.82rem"></div>
+    </div>`;
+  });
+  document.getElementById('product-cost-list').innerHTML = html;
+  renderCostSummary();
+}
+
+function addMatRow(pid) {
+  const container = document.getElementById('mat-rows-' + pid);
+  const idx = container.children.length;
+  const div = document.createElement('div');
+  div.className = 'cost-row';
+  div.innerHTML = `<input class="cost-name" type="text" id="mat-name-${pid}-${idx}" placeholder="材料名">
+    <input type="number" id="mat-cost-${pid}-${idx}" placeholder="円" style="max-width:100px">
+    <span style="font-size:0.8rem">円</span>`;
+  container.appendChild(div);
+}
+
+function saveCosts() {
+  const costs = {};
+  PRODUCTS.forEach(p => {
+    const matRows = document.getElementById('mat-rows-' + p.id).children.length;
+    const materials = [];
+    for (let i = 0; i < matRows; i++) {
+      const name = document.getElementById(`mat-name-${p.id}-${i}`)?.value || '';
+      const cost = parseFloat(document.getElementById(`mat-cost-${p.id}-${i}`)?.value) || 0;
+      if (name) materials.push({ name, cost });
+    }
+    costs[p.id] = {
+      materials,
+      labor_min: parseFloat(document.getElementById(`labor-${p.id}`).value) || 0,
+      hourly: parseFloat(document.getElementById(`hourly-${p.id}`).value) || 0,
+      price: parseFloat(document.getElementById(`price-${p.id}`).value) || 0,
+    };
+  });
+  save('costs', costs);
+  toast('原価データを保存しました');
+  renderCostSummary();
+}
+
+function getCostData(pid) {
+  const costs = load('costs', {});
+  const c = costs[pid];
+  if (!c) return null;
+  const matCost = c.materials.reduce((s, m) => s + m.cost, 0);
+  const laborCost = (c.labor_min / 60) * c.hourly;
+  const totalCost = matCost + laborCost;
+  const profit = c.price - totalCost;
+  const margin = c.price > 0 ? (profit / c.price * 100) : 0;
+  return { matCost, laborCost, totalCost, profit, margin, price: c.price };
+}
+
+function renderCostSummary() {
+  let html = '<table><thead><tr><th>商品</th><th>材料費</th><th>人件費</th><th>原価合計</th><th>販売価格</th><th>利益</th><th>利益率</th></tr></thead><tbody>';
+  PRODUCTS.forEach(p => {
+    const d = getCostData(p.id);
+    if (!d) { html += `<tr><td>${p.name}</td><td colspan="6" style="color:#aaa">未設定</td></tr>`; return; }
+    const color = d.margin >= 40 ? '#2d6a4f' : d.margin >= 20 ? '#e67e22' : '#e74c3c';
+    html += `<tr>
+      <td>${p.name}</td>
+      <td>¥${d.matCost.toLocaleString()}</td>
+      <td>¥${Math.round(d.laborCost).toLocaleString()}</td>
+      <td>¥${Math.round(d.totalCost).toLocaleString()}</td>
+      <td>¥${d.price.toLocaleString()}</td>
+      <td style="color:${color}">¥${Math.round(d.profit).toLocaleString()}</td>
+      <td style="color:${color}">${Math.round(d.margin)}%</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('cost-summary-table').innerHTML = html;
+}
+
+// ====== SALES ======
+function addSale() {
+  const sales = load('sales', []);
+  const date = document.getElementById('s-date').value;
+  const product = document.getElementById('s-product').value;
+  const qty = parseInt(document.getElementById('s-qty').value) || 1;
+  const channel = document.getElementById('s-channel').value;
+  const price = parseFloat(document.getElementById('s-price').value) || 0;
+  const note = document.getElementById('s-note').value;
+  if (!date || !price) { alert('日付と価格を入力してください'); return; }
+  const fee = CHANNELS[channel].fee;
+  const net = price * qty * (1 - fee);
+  sales.push({ id: Date.now(), date, product, qty, channel, price, note, net });
+  save('sales', sales);
+  document.getElementById('s-price').value = '';
+  document.getElementById('s-note').value = '';
+  toast('売上を追加しました');
+  renderSales();
+}
+
+function filterSales(ch, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderSalesTable(ch);
+}
+
+function renderSales() { renderSalesTable('all'); }
+
+function renderSalesTable(chFilter) {
+  const sales = load('sales', []);
+  const filtered = chFilter === 'all' ? sales : sales.filter(s => s.channel === chFilter);
+  const sorted = [...filtered].sort((a,b) => b.date.localeCompare(a.date));
+  if (!sorted.length) { document.getElementById('sales-table').innerHTML = '<p style="color:#aaa;font-size:0.85rem">記録がありません</p>'; return; }
+  const total = sorted.reduce((s, r) => s + r.price * r.qty, 0);
+  const totalNet = sorted.reduce((s, r) => s + r.net, 0);
+  let html = `<table><thead><tr><th>日付</th><th>商品</th><th>数量</th><th>販路</th><th>単価</th><th>売上</th><th>手取り</th><th></th></tr></thead><tbody>`;
+  sorted.forEach(r => {
+    const pName = PRODUCTS.find(p => p.id === r.product)?.name || r.product;
+    const gross = r.price * r.qty;
+    html += `<tr>
+      <td>${r.date}</td>
+      <td>${pName}</td>
+      <td>${r.qty}</td>
+      <td><span class="badge badge-${r.channel}">${CHANNELS[r.channel].name}</span></td>
+      <td>¥${r.price.toLocaleString()}</td>
+      <td>¥${gross.toLocaleString()}</td>
+      <td>¥${Math.round(r.net).toLocaleString()} <span class="channel-fee">(手数料${(CHANNELS[r.channel].fee*100).toFixed(0)}%)</span></td>
+      <td><button class="btn btn-danger" onclick="deleteSale(${r.id})">削除</button></td>
+    </tr>`;
+  });
+  html += `</tbody><tfoot><tr><td colspan="5" style="text-align:right;font-weight:bold">合計</td>
+    <td>¥${total.toLocaleString()}</td>
+    <td>¥${Math.round(totalNet).toLocaleString()}</td><td></td></tr></tfoot></table>`;
+  document.getElementById('sales-table').innerHTML = html;
+}
+
+function deleteSale(id) {
+  if (!confirm('削除しますか？')) return;
+  const sales = load('sales', []).filter(s => s.id !== id);
+  save('sales', sales);
+  renderSales();
+  toast('削除しました');
+}
+
+// ====== EXPENSES ======
+const CAT_LABELS = {
+  material: '材料費', package: '梱包材・送料',
+  'event-fee': 'イベント出展費', transport: '交通費',
+  tools: '道具・備品', other: 'その他'
+};
+
+function addExpense() {
+  const expenses = load('expenses', []);
+  const date = document.getElementById('e-date').value;
+  const category = document.getElementById('e-category').value;
+  const amount = parseFloat(document.getElementById('e-amount').value) || 0;
+  const note = document.getElementById('e-note').value;
+  if (!date || !amount) { alert('日付と金額を入力してください'); return; }
+  expenses.push({ id: Date.now(), date, category, amount, note });
+  save('expenses', expenses);
+  document.getElementById('e-amount').value = '';
+  document.getElementById('e-note').value = '';
+  toast('支出を追加しました');
+  renderExpenses();
+}
+
+function renderExpenses() {
+  const expenses = load('expenses', []);
+  const sorted = [...expenses].sort((a,b) => b.date.localeCompare(a.date));
+  const total = sorted.reduce((s, r) => s + r.amount, 0);
+  if (!sorted.length) { document.getElementById('expenses-table').innerHTML = '<p style="color:#aaa;font-size:0.85rem">記録がありません</p>'; return; }
+  let html = `<table><thead><tr><th>日付</th><th>カテゴリ</th><th>金額</th><th>メモ</th><th></th></tr></thead><tbody>`;
+  sorted.forEach(r => {
+    html += `<tr>
+      <td>${r.date}</td>
+      <td>${CAT_LABELS[r.category] || r.category}</td>
+      <td>¥${r.amount.toLocaleString()}</td>
+      <td>${r.note}</td>
+      <td><button class="btn btn-danger" onclick="deleteExpense(${r.id})">削除</button></td>
+    </tr>`;
+  });
+  html += `</tbody><tfoot><tr><td colspan="2" style="text-align:right;font-weight:bold">合計</td>
+    <td>¥${total.toLocaleString()}</td><td colspan="2"></td></tr></tfoot></table>`;
+  document.getElementById('expenses-table').innerHTML = html;
+}
+
+function deleteExpense(id) {
+  if (!confirm('削除しますか？')) return;
+  const expenses = load('expenses', []).filter(e => e.id !== id);
+  save('expenses', expenses);
+  renderExpenses();
+  toast('削除しました');
+}
+
+// ====== INVENTORY ======
+function renderInventory() {
+  const stock = load('finished_stock', {
+    yotsudatami: { qty: 0, min: 3 },
+    squareknot: { qty: 0, min: 3 },
+    tbd: { qty: 0, min: 2 },
+  });
+  let html = '';
+  PRODUCTS.forEach(p => {
+    const s = stock[p.id] || { qty: 0, min: 2 };
+    const warn = s.qty <= s.min;
+    html += `<tr>
+      <td>${p.name}</td>
+      <td><input type="number" id="fs-qty-${p.id}" value="${s.qty}" min="0" style="width:80px" class="${warn ? 'stock-warn' : ''}"> 個</td>
+      <td><input type="number" id="fs-min-${p.id}" value="${s.min}" min="0" style="width:60px"> 個</td>
+      <td>${warn ? '<span class="stock-warn">⚠️ 補充推奨</span>' : '<span class="stock-ok">✓</span>'}</td>
+    </tr>`;
+  });
+  document.getElementById('finished-stock-tbody').innerHTML = html;
+  renderMaterials();
+}
+
+function saveFinishedStock() {
+  const stock = {};
+  PRODUCTS.forEach(p => {
+    stock[p.id] = {
+      qty: parseInt(document.getElementById(`fs-qty-${p.id}`).value) || 0,
+      min: parseInt(document.getElementById(`fs-min-${p.id}`).value) || 0,
+    };
+  });
+  save('finished_stock', stock);
+  toast('在庫を保存しました');
+  renderInventory();
+}
+
+function renderMaterials() {
+  const mats = load('materials', [
+    { id: 1, name: 'アダンの葉', unit: '束', qty: 0, min: 2, cost_per: 0 },
+    { id: 2, name: '金具（ピアス用）', unit: 'ペア', qty: 0, min: 10, cost_per: 0 },
+    { id: 3, name: '梱包袋', unit: '枚', qty: 0, min: 20, cost_per: 0 },
+  ]);
+  let html = `<table><thead><tr><th>材料名</th><th>在庫数</th><th>単位</th><th>最低在庫</th><th>単価(円)</th><th>状態</th><th></th></tr></thead><tbody>`;
+  mats.forEach((m, i) => {
+    const warn = m.qty <= m.min;
+    html += `<tr>
+      <td><input type="text" id="m-name-${i}" value="${m.name}" style="min-width:120px"></td>
+      <td><input type="number" id="m-qty-${i}" value="${m.qty}" min="0" style="width:70px"></td>
+      <td><input type="text" id="m-unit-${i}" value="${m.unit}" style="width:60px"></td>
+      <td><input type="number" id="m-min-${i}" value="${m.min}" min="0" style="width:70px"></td>
+      <td><input type="number" id="m-cost-${i}" value="${m.cost_per}" min="0" style="width:80px"></td>
+      <td>${warn ? '<span class="stock-warn">⚠️ 要補充</span>' : '<span class="stock-ok">✓</span>'}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteMaterial(${m.id})">削除</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('material-list').innerHTML = html;
+  window._matCount = mats.length;
+  window._matIds = mats.map(m => m.id);
+}
+
+function addMaterialRow() {
+  const mats = load('materials', []);
+  const newId = Date.now();
+  mats.push({ id: newId, name: '', unit: '個', qty: 0, min: 0, cost_per: 0 });
+  save('materials', mats);
+  renderMaterials();
+}
+
+function saveMaterials() {
+  const mats = load('materials', []);
+  mats.forEach((m, i) => {
+    m.name = document.getElementById(`m-name-${i}`)?.value || m.name;
+    m.qty = parseInt(document.getElementById(`m-qty-${i}`)?.value) || 0;
+    m.unit = document.getElementById(`m-unit-${i}`)?.value || m.unit;
+    m.min = parseInt(document.getElementById(`m-min-${i}`)?.value) || 0;
+    m.cost_per = parseFloat(document.getElementById(`m-cost-${i}`)?.value) || 0;
+  });
+  save('materials', mats);
+  toast('材料在庫を保存しました');
+  renderMaterials();
+}
+
+function deleteMaterial(id) {
+  if (!confirm('削除しますか？')) return;
+  const mats = load('materials', []).filter(m => m.id !== id);
+  save('materials', mats);
+  renderMaterials();
+}
+
+// ====== EVENTS ======
+function addEvent() {
+  const events = load('events', []);
+  const name = document.getElementById('ev-name').value;
+  const date = document.getElementById('ev-date').value;
+  const fee = parseFloat(document.getElementById('ev-fee').value) || 0;
+  const transport = parseFloat(document.getElementById('ev-transport').value) || 0;
+  const sales = parseFloat(document.getElementById('ev-sales').value) || 0;
+  const note = document.getElementById('ev-note').value;
+  if (!name || !date) { alert('イベント名と日付を入力してください'); return; }
+  events.push({ id: Date.now(), name, date, fee, transport, sales, note });
+  save('events', events);
+  ['ev-name','ev-date','ev-fee','ev-transport','ev-sales','ev-note'].forEach(id => document.getElementById(id).value = '');
+  toast('イベントを追加しました');
+  renderEvents();
+}
+
+function renderEvents() {
+  const events = load('events', []);
+  const sorted = [...events].sort((a,b) => b.date.localeCompare(a.date));
+  if (!sorted.length) { document.getElementById('events-table').innerHTML = '<p style="color:#aaa;font-size:0.85rem">記録がありません</p>'; return; }
+  let html = `<table><thead><tr><th>日付</th><th>イベント名</th><th>出展費</th><th>交通費</th><th>売上</th><th>純利益</th><th>採算</th><th></th></tr></thead><tbody>`;
+  sorted.forEach(r => {
+    const cost = r.fee + r.transport;
+    const profit = r.sales - cost;
+    const ok = profit > 0;
+    html += `<tr>
+      <td>${r.date}</td>
+      <td>${r.name}</td>
+      <td>¥${r.fee.toLocaleString()}</td>
+      <td>¥${r.transport.toLocaleString()}</td>
+      <td>¥${r.sales.toLocaleString()}</td>
+      <td style="color:${ok?'#2d6a4f':'#e74c3c'}">¥${profit.toLocaleString()}</td>
+      <td>${ok ? '✅ 黒字' : r.sales === 0 ? '⏳ 未入力' : '🔴 赤字'}</td>
+      <td><button class="btn btn-danger" onclick="deleteEvent(${r.id})">削除</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('events-table').innerHTML = html;
+}
+
+function deleteEvent(id) {
+  if (!confirm('削除しますか？')) return;
+  const events = load('events', []).filter(e => e.id !== id);
+  save('events', events);
+  renderEvents();
+}
+
+// ====== PLAN ======
+function savePlan() {
+  const plan = {
+    sales: parseFloat(document.getElementById('plan-sales').value) || 0,
+    qty: parseFloat(document.getElementById('plan-qty').value) || 0,
+    budget: parseFloat(document.getElementById('plan-budget').value) || 0,
+  };
+  save('plan', plan);
+  toast('目標を保存しました');
+  renderPlan();
+}
+
+function renderPlan() {
+  const plan = load('plan', { sales: 0, qty: 0, budget: 0 });
+  document.getElementById('plan-sales').value = plan.sales || '';
+  document.getElementById('plan-qty').value = plan.qty || '';
+  document.getElementById('plan-budget').value = plan.budget || '';
+
+  const now = new Date();
+  const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const sales = load('sales', []).filter(s => s.date.startsWith(ym));
+  const expenses = load('expenses', []).filter(e => e.date.startsWith(ym));
+
+  const actualSales = sales.reduce((s, r) => s + r.price * r.qty, 0);
+  const actualExpense = expenses.reduce((s, r) => s + r.amount, 0);
+  const actualQty = sales.reduce((s, r) => s + r.qty, 0);
+
+  const salesPct = plan.sales > 0 ? Math.min(100, actualSales / plan.sales * 100) : 0;
+  const qtyPct = plan.qty > 0 ? Math.min(100, actualQty / plan.qty * 100) : 0;
+  const budgetPct = plan.budget > 0 ? Math.min(100, actualExpense / plan.budget * 100) : 0;
+
+  document.getElementById('plan-progress').innerHTML = `
+    <div class="summary-row"><span>売上目標</span><span>¥${plan.sales.toLocaleString()}</span></div>
+    <div class="profit-bar"><div class="profit-bar-fill" style="width:${salesPct}%"></div></div>
+    <div style="font-size:0.8rem;color:#666;margin-bottom:8px">実績: ¥${actualSales.toLocaleString()} (${Math.round(salesPct)}%)</div>
+    <div class="summary-row"><span>製作数目標</span><span>${plan.qty} 個</span></div>
+    <div class="profit-bar"><div class="profit-bar-fill" style="width:${qtyPct}%"></div></div>
+    <div style="font-size:0.8rem;color:#666;margin-bottom:8px">実績: ${actualQty} 個 (${Math.round(qtyPct)}%)</div>
+    <div class="summary-row"><span>材料費予算</span><span>¥${plan.budget.toLocaleString()}</span></div>
+    <div class="profit-bar"><div class="profit-bar-fill" style="width:${budgetPct}%;background:${budgetPct>90?'#e74c3c':'#52b788'}"></div></div>
+    <div style="font-size:0.8rem;color:#666">使用済: ¥${actualExpense.toLocaleString()} (${Math.round(budgetPct)}%)</div>
+  `;
+
+  // Order plan
+  const mats = load('materials', []);
+  const lowMats = mats.filter(m => m.qty <= m.min);
+  let orderHtml = lowMats.length === 0
+    ? '<div class="alert alert-ok">すべての材料は十分な在庫があります ✓</div>'
+    : lowMats.map(m => `<div class="alert alert-warn">⚠️ <b>${m.name}</b> 在庫: ${m.qty}${m.unit} / 最低: ${m.min}${m.unit} — 補充が必要です</div>`).join('');
+  document.getElementById('order-plan').innerHTML = orderHtml;
+}
+
+function calcSim() {
+  const price = parseFloat(document.getElementById('sim-price').value) || 0;
+  if (!price) { document.getElementById('sim-result').innerHTML = ''; return; }
+  let html = '<table><thead><tr><th>販路</th><th>手数料率</th><th>手数料額</th><th>手取り</th></tr></thead><tbody>';
+  Object.entries(CHANNELS).forEach(([k, ch]) => {
+    const fee = price * ch.fee;
+    const net = price - fee;
+    html += `<tr>
+      <td><span class="badge badge-${k}">${ch.name}</span></td>
+      <td>${(ch.fee*100).toFixed(0)}%</td>
+      <td>¥${Math.round(fee).toLocaleString()}</td>
+      <td><b>¥${Math.round(net).toLocaleString()}</b></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('sim-result').innerHTML = html;
+}
+
+// ====== DASHBOARD ======
+let chartChannel, chartProduct, chartMonthly;
+
+function renderDashboard() {
+  const now = new Date();
+  const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const allSales = load('sales', []);
+  const allExpenses = load('expenses', []);
+  const sales = allSales.filter(s => s.date.startsWith(ym));
+  const expenses = allExpenses.filter(e => e.date.startsWith(ym));
+
+  const totalSales = sales.reduce((s, r) => s + r.price * r.qty, 0);
+  const totalNet = sales.reduce((s, r) => s + r.net, 0);
+  const totalExpense = expenses.reduce((s, r) => s + r.amount, 0);
+  const profit = totalNet - totalExpense;
+
+  document.getElementById('db-sales').textContent = '¥' + totalSales.toLocaleString();
+  document.getElementById('db-profit').textContent = '¥' + profit.toLocaleString();
+  document.getElementById('db-expense').textContent = '¥' + totalExpense.toLocaleString();
+
+  // Channel chart
+  const chData = {};
+  Object.keys(CHANNELS).forEach(k => chData[k] = 0);
+  sales.forEach(s => chData[s.channel] = (chData[s.channel] || 0) + s.price * s.qty);
+  const chLabels = Object.values(CHANNELS).map(c => c.name);
+  const chValues = Object.keys(CHANNELS).map(k => chData[k]);
+
+  if (chartChannel) chartChannel.destroy();
+  const ctx1 = document.getElementById('chartChannel').getContext('2d');
+  chartChannel = new Chart(ctx1, {
+    type: 'doughnut',
+    data: { labels: chLabels, datasets: [{ data: chValues, backgroundColor: ['#f48fb1','#ffb74d','#81c784','#ce93d8'] }] },
+    options: { plugins: { legend: { position: 'bottom' } } }
+  });
+
+  // Product chart
+  const pData = {};
+  PRODUCTS.forEach(p => pData[p.id] = 0);
+  sales.forEach(s => pData[s.product] = (pData[s.product] || 0) + s.price * s.qty);
+  const pLabels = PRODUCTS.map(p => p.name);
+  const pValues = PRODUCTS.map(p => pData[p.id]);
+
+  if (chartProduct) chartProduct.destroy();
+  const ctx2 = document.getElementById('chartProduct').getContext('2d');
+  chartProduct = new Chart(ctx2, {
+    type: 'bar',
+    data: { labels: pLabels, datasets: [{ label: '売上(円)', data: pValues, backgroundColor: '#52b788' }] },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+  });
+
+  // Monthly chart (6 months)
+  const months = [];
+  const monthlySales = [];
+  const monthlyExpenses = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    months.push(key.slice(0,7));
+    monthlySales.push(allSales.filter(s => s.date.startsWith(key)).reduce((s, r) => s + r.price * r.qty, 0));
+    monthlyExpenses.push(allExpenses.filter(e => e.date.startsWith(key)).reduce((s, r) => s + r.amount, 0));
+  }
+
+  if (chartMonthly) chartMonthly.destroy();
+  const ctx3 = document.getElementById('chartMonthly').getContext('2d');
+  chartMonthly = new Chart(ctx3, {
+    type: 'line',
+    data: {
+      labels: months,
+      datasets: [
+        { label: '売上', data: monthlySales, borderColor: '#52b788', backgroundColor: 'rgba(82,183,136,0.1)', fill: true, tension: 0.3 },
+        { label: '支出', data: monthlyExpenses, borderColor: '#e74c3c', backgroundColor: 'rgba(231,76,60,0.1)', fill: true, tension: 0.3 },
+      ]
+    },
+    options: { plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } }
+  });
+
+  // Stock alerts
+  const stock = load('finished_stock', {});
+  const mats = load('materials', []);
+  const alerts = [];
+  PRODUCTS.forEach(p => {
+    const s = stock[p.id];
+    if (s && s.qty <= s.min) alerts.push(`<div class="alert alert-warn">⚠️ 完成品 <b>${p.name}</b> 在庫不足 (${s.qty}個)`);
+  });
+  mats.forEach(m => {
+    if (m.qty <= m.min) alerts.push(`<div class="alert alert-warn">⚠️ 材料 <b>${m.name}</b> 補充推奨 (残${m.qty}${m.unit})</div>`);
+  });
+  document.getElementById('stock-alerts').innerHTML = alerts.length ? alerts.join('') : '<div class="alert alert-ok">在庫は問題ありません ✓</div>';
+}
+
+// ====== INIT ======
+document.addEventListener('DOMContentLoaded', () => {
+  // Set default dates
+  const today = new Date().toISOString().split('T')[0];
+  ['s-date','e-date'].forEach(id => { const el = document.getElementById(id); if(el) el.value = today; });
+  renderDashboard();
+});
+</script>
+</body>
+</html>
