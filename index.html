@@ -18,6 +18,37 @@
     --shadow: 0 2px 8px rgba(0,0,0,0.08);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  #lock-screen {
+    position: fixed; inset: 0;
+    background: linear-gradient(135deg, #2d6a4f, #52b788);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+  }
+  #lock-box {
+    background: white;
+    border-radius: 20px;
+    padding: 40px 32px;
+    text-align: center;
+    width: 300px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  }
+  #lock-box .leaf { font-size: 3rem; margin-bottom: 8px; }
+  #lock-box h2 { color: #2d6a4f; margin-bottom: 4px; font-size: 1.2rem; }
+  #lock-box p { color: #888; font-size: 0.8rem; margin-bottom: 24px; }
+  #lock-input {
+    width: 100%; padding: 12px; border: 2px solid #ccc;
+    border-radius: 10px; font-size: 1rem; text-align: center;
+    letter-spacing: 0.1em; margin-bottom: 12px;
+  }
+  #lock-input:focus { outline: none; border-color: #52b788; }
+  #lock-btn {
+    width: 100%; padding: 12px; background: #2d6a4f;
+    color: white; border: none; border-radius: 10px;
+    font-size: 1rem; font-weight: bold; cursor: pointer;
+  }
+  #lock-btn:hover { background: #52b788; }
+  #lock-error { color: #e74c3c; font-size: 0.8rem; margin-top: 8px; display: none; }
   body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f0f4f0; color: var(--text); }
 
   header {
@@ -175,6 +206,17 @@
 </style>
 </head>
 <body>
+
+<div id="lock-screen">
+  <div id="lock-box">
+    <div class="leaf">🌿</div>
+    <h2>ADAN Piercing Manager</h2>
+    <p>パスワードを入力してください</p>
+    <input type="password" id="lock-input" placeholder="パスワード" onkeydown="if(event.key==='Enter')unlock()">
+    <button id="lock-btn" onclick="unlock()">ログイン</button>
+    <div id="lock-error">パスワードが違います</div>
+  </div>
+</div>
 
 <header>
   <div>🌿</div>
@@ -992,8 +1034,25 @@ function renderDashboard() {
   document.getElementById('stock-alerts').innerHTML = alerts.length ? alerts.join('') : '<div class="alert alert-ok">在庫は問題ありません ✓</div>';
 }
 
+// ====== PASSWORD ======
+function unlock() {
+  const input = document.getElementById('lock-input').value;
+  if (input === 'Adan0320') {
+    sessionStorage.setItem('adan_auth', '1');
+    document.getElementById('lock-screen').style.display = 'none';
+  } else {
+    document.getElementById('lock-error').style.display = 'block';
+    document.getElementById('lock-input').value = '';
+  }
+}
+
 // ====== INIT ======
 document.addEventListener('DOMContentLoaded', () => {
+  if (sessionStorage.getItem('adan_auth') !== '1') {
+    document.getElementById('lock-screen').style.display = 'flex';
+  } else {
+    document.getElementById('lock-screen').style.display = 'none';
+  }
   // Set default dates
   const today = new Date().toISOString().split('T')[0];
   ['s-date','e-date'].forEach(id => { const el = document.getElementById(id); if(el) el.value = today; });
