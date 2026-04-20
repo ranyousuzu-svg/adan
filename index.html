@@ -332,11 +332,11 @@
         <input type="date" id="s-date">
         <label>商品</label>
         <select id="s-product">
-          <option value="kumi">① Kumi（クミ）</option>
+          <option value="kumu">① Kumu（クム）</option>
           <option value="pua">② Pua（プア）</option>
           <option value="lana">③ Lana（ラナ）</option>
-          <option value="koapaka_bar">④ Koapaka 真鍮棒</option>
-          <option value="koapaka_ring">⑤ Koapaka 真鍮輪</option>
+          <option value="koapaka_bar">④ Koapaka DW棒状</option>
+          <option value="koapaka_ring">⑤ Koapaka DW輪状</option>
           <option value="kulia">⑥ Kūlia（クーリア）</option>
         </select>
         <label>数量</label>
@@ -532,12 +532,12 @@
 <script>
 // ====== DATA ======
 const PRODUCTS = [
-  { id: 'kumi',         name: '① Kumi（クミ）四つ畳編み × ビーズ' },
-  { id: 'pua',          name: '② Pua（プア）スクエア / リボン編み' },
-  { id: 'lana',         name: '③ Lana（ラナ）星形ひとつぶ' },
-  { id: 'koapaka_bar',  name: '④ Koapaka（コアパカ）ダイヤモンド × 真鍮棒' },
-  { id: 'koapaka_ring', name: '⑤ Koapaka（コアパカ）ダイヤモンド × 真鍮輪' },
-  { id: 'kulia',        name: '⑥ Kūlia（クーリア）四つ畳・縦つなぎ' },
+  { id: 'kumu',         name: '① Kumu（クム）四つ畳×1' },
+  { id: 'pua',          name: '② Pua（プア）リボン編み' },
+  { id: 'lana',         name: '③ Lana（ラナ）星型ひとつ' },
+  { id: 'koapaka_bar',  name: '④ Koapaka（コアパカ）DW棒状' },
+  { id: 'koapaka_ring', name: '⑤ Koapaka（コアパカ）DW輪状' },
+  { id: 'kulia',        name: '⑥ Kūlia（クーリア）四つ畳縦つなぎ' },
 ];
 const CHANNELS = {
   minne:   { name: 'minne',              fee: 0.10 },
@@ -1269,19 +1269,19 @@ function initDefaultCosts() {
     { name: '梱包', cost: 100 },
   ];
   save('costs', {
-    kumi:         { materials: defaultMats, labor_min: 120, hourly: 1400, price: 5800 },
+    kumu:         { materials: defaultMats, labor_min: 120, hourly: 1400, price: 5800 },
     pua:          { materials: defaultMats, labor_min: 90,  hourly: 1400, price: 4800 },
-    lana:         { materials: defaultMats, labor_min: 90,  hourly: 1400, price: 4200 },
-    koapaka_bar:  { materials: defaultMats, labor_min: 90,  hourly: 1400, price: 0 },
-    koapaka_ring: { materials: defaultMats, labor_min: 90,  hourly: 1400, price: 0 },
-    kulia:        { materials: defaultMats, labor_min: 120, hourly: 1400, price: 0 },
+    lana:         { materials: defaultMats, labor_min: 90,  hourly: 1400, price: 4500 },
+    koapaka_bar:  { materials: defaultMats, labor_min: 120, hourly: 1400, price: 4800 },
+    koapaka_ring: { materials: defaultMats, labor_min: 120, hourly: 1400, price: 4800 },
+    kulia:        { materials: defaultMats, labor_min: 150, hourly: 1400, price: 6200 },
   });
 }
 
 function initDefaultStock() {
   if (load('finished_stock', null)) return;
   save('finished_stock', {
-    kumi:         { qty: 0, min: 3 },
+    kumu:         { qty: 0, min: 3 },
     pua:          { qty: 0, min: 3 },
     lana:         { qty: 0, min: 3 },
     koapaka_bar:  { qty: 0, min: 3 },
