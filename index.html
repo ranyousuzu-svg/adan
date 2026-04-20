@@ -234,12 +234,13 @@
 
 <div id="sync-bar">
   <strong>🔄 データ同期：</strong>
-  <button class="btn btn-primary btn-sm" onclick="exportData()">📤 エクスポート（バックアップ保存）</button>
+  <button class="btn btn-primary btn-sm" onclick="manualSync()">🔄 今すぐ同期</button>
+  <button class="btn btn-sm" style="background:#eee;color:#333" onclick="exportData()">📤 バックアップ保存</button>
   <label class="btn btn-sm" style="background:#eee;color:#333">
-    📥 インポート（データ読み込み）
+    📥 バックアップ読込
     <input type="file" accept=".json" onchange="importData(event)" style="display:none">
   </label>
-  <span style="color:#888">スマホでも同じデータを使うには：エクスポート→LINEで自分に送る→スマホでサイトを開いてインポート</span>
+  <span id="sync-status" style="color:#888;font-size:0.8rem"></span>
 </div>
 
 <header>
@@ -1103,9 +1104,29 @@ function loadFromFirestore() {
       const keys = ['costs','sales','expenses','finished_stock','materials','events','plan'];
       keys.forEach(k => { if (data[k] !== undefined) localStorage.setItem('adan_' + k, JSON.stringify(data[k])); });
       renderDashboard();
-      toast('データを同期しました');
+      const now = new Date().toLocaleTimeString('ja-JP');
+      const el = document.getElementById('sync-status');
+      if (el) el.textContent = '最終同期: ' + now;
     }
   }, e => { console.error('Firestore同期エラー', e); });
+}
+
+async function manualSync() {
+  if (!currentUser) return;
+  const el = document.getElementById('sync-status');
+  if (el) el.textContent = '同期中...';
+  try {
+    const doc = await db.collection('users').doc(currentUser.uid).get();
+    if (doc.exists) {
+      const data = doc.data();
+      const keys = ['costs','sales','expenses','finished_stock','materials','events','plan'];
+      keys.forEach(k => { if (data[k] !== undefined) localStorage.setItem('adan_' + k, JSON.stringify(data[k])); });
+      renderDashboard();
+      const now = new Date().toLocaleTimeString('ja-JP');
+      if (el) el.textContent = '最終同期: ' + now;
+      toast('同期しました！');
+    }
+  } catch(e) { if (el) el.textContent = '同期エラー'; }
 }
 
 async function saveToFirestore() {
