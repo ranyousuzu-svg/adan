@@ -150,6 +150,7 @@
   .badge-minne { background: #ffe0ef; color: #c0397a; }
   .badge-creema { background: #fff3e0; color: #e67e22; }
   .badge-event { background: #e8f5e9; color: #2d6a4f; }
+  .badge-consignment { background: #fff8e1; color: #f57f17; }
   .badge-other { background: #f3e5f5; color: #7b1fa2; }
 
   .alert { padding: 10px 14px; border-radius: 6px; margin-bottom: 10px; font-size: 0.85rem; }
@@ -347,6 +348,7 @@
         <select id="s-channel">
           <option value="minne">minne</option>
           <option value="creema">Creema</option>
+          <option value="consignment">委託販売</option>
           <option value="event">ハンドメイドマーケット</option>
           <option value="other">その他</option>
         </select>
@@ -573,10 +575,11 @@ const PRODUCTS = [
   { id: 'kulia',        name: '⑥ Kūlia（クーリア）四つ畳縦つなぎ' },
 ];
 const CHANNELS = {
-  minne:   { name: 'minne',              fee: 0.10 },
-  creema:  { name: 'Creema',             fee: 0.22 },
-  event:   { name: 'ハンドメイドマーケット', fee: 0 },
-  other:   { name: 'その他',              fee: 0 },
+  minne:       { name: 'minne',              fee: 0.10 },
+  creema:      { name: 'Creema',             fee: 0.22 },
+  consignment: { name: '委託販売',            fee: 0.30 },
+  event:       { name: 'ハンドメイドマーケット', fee: 0 },
+  other:       { name: 'その他',              fee: 0 },
 };
 
 function load(key, def) {
