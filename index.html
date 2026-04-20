@@ -334,7 +334,8 @@
         <select id="s-product">
           <option value="yotsudatami">四つ畳編みのピアス</option>
           <option value="squareknot">スクエアノットのピアス</option>
-          <option value="tbd">未定商品（TBD）</option>
+          <option value="iki">粋（DW編み）のピアス</option>
+          <option value="hoku">Hoku（星型）のピアス</option>
         </select>
         <label>数量</label>
         <input type="number" id="s-qty" value="1" min="1">
@@ -531,7 +532,8 @@
 const PRODUCTS = [
   { id: 'yotsudatami', name: '四つ畳編みのピアス' },
   { id: 'squareknot',  name: 'スクエアノットのピアス' },
-  { id: 'tbd',         name: '未定商品（TBD）' },
+  { id: 'iki',         name: '粋（DW編み）のピアス' },
+  { id: 'hoku',        name: 'Hoku（星型）のピアス' },
 ];
 const CHANNELS = {
   minne:   { name: 'minne',              fee: 0.10 },
@@ -1165,6 +1167,8 @@ auth.onAuthStateChanged(async user => {
     currentUser = user;
     document.getElementById('lock-screen').style.display = 'none';
     loadFromFirestore();
+    initDefaultCosts();
+    initDefaultStock();
     const today = new Date().toISOString().split('T')[0];
     ['s-date','e-date'].forEach(id => { const el = document.getElementById(id); if(el) el.value = today; });
     renderDashboard();
@@ -1248,6 +1252,34 @@ function importData(event) {
   };
   reader.readAsText(file);
   event.target.value = '';
+}
+
+// ====== DEFAULT COSTS ======
+function initDefaultCosts() {
+  if (load('costs', null)) return;
+  const defaultMats = [
+    { name: 'アダンの葉', cost: 200 },
+    { name: 'ビーズ', cost: 320 },
+    { name: 'イヤリング金具', cost: 338 },
+    { name: 'その他', cost: 27 },
+    { name: '梱包', cost: 100 },
+  ];
+  save('costs', {
+    yotsudatami: { materials: defaultMats, labor_min: 120, hourly: 1400, price: 5800 },
+    squareknot:  { materials: defaultMats, labor_min: 90,  hourly: 1400, price: 4800 },
+    iki:         { materials: defaultMats, labor_min: 90,  hourly: 1400, price: 4500 },
+    hoku:        { materials: defaultMats, labor_min: 90,  hourly: 1400, price: 4200 },
+  });
+}
+
+function initDefaultStock() {
+  if (load('finished_stock', null)) return;
+  save('finished_stock', {
+    yotsudatami: { qty: 0, min: 3 },
+    squareknot:  { qty: 0, min: 3 },
+    iki:         { qty: 0, min: 3 },
+    hoku:        { qty: 0, min: 3 },
+  });
 }
 
 // ====== INIT ======
