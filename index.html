@@ -383,12 +383,38 @@
         <input type="date" id="e-date">
         <label>カテゴリ</label>
         <select id="e-category" onchange="toggleMaterialSelect()">
-          <option value="material">材料費（アダン葉・金具等）</option>
-          <option value="package">梱包材・送料</option>
-          <option value="event-fee">イベント出展費</option>
-          <option value="transport">交通費</option>
-          <option value="tools">道具・備品</option>
-          <option value="other">その他</option>
+          <optgroup label="🌿 材料費">
+            <option value="mat-adan">材料費 ▶ アダンの葉</option>
+            <option value="mat-parts">材料費 ▶ 金具・パーツ</option>
+            <option value="mat-beads">材料費 ▶ ビーズ・装飾</option>
+            <option value="mat-wire">材料費 ▶ ワイヤー・真鍮</option>
+            <option value="material">材料費 ▶ その他材料</option>
+          </optgroup>
+          <optgroup label="📦 梱包・発送">
+            <option value="package-material">梱包材（袋・箱・緩衝材）</option>
+            <option value="shipping">送料・配送費</option>
+            <option value="package-label">宛名シール・テープ等</option>
+          </optgroup>
+          <optgroup label="🎪 イベント関連">
+            <option value="event-fee">イベント出展費</option>
+            <option value="event-display">展示什器・ディスプレイ</option>
+            <option value="transport">交通費</option>
+            <option value="accommodation">宿泊費</option>
+          </optgroup>
+          <optgroup label="📣 販促・撮影">
+            <option value="photo">撮影・写真編集費</option>
+            <option value="ad">広告費（SNS・minne等）</option>
+            <option value="card">名刺・ショップカード</option>
+          </optgroup>
+          <optgroup label="🔧 道具・設備">
+            <option value="tools">制作道具・備品</option>
+            <option value="equipment">設備・機材</option>
+          </optgroup>
+          <optgroup label="💼 その他">
+            <option value="fee">手数料・サービス料</option>
+            <option value="study">学習・資料費</option>
+            <option value="other">その他</option>
+          </optgroup>
         </select>
       </div>
       <div>
@@ -400,21 +426,28 @@
     </div>
 
     <!-- 材料費のとき専用 -->
-    <div id="material-purchase-box" style="margin-top:14px;padding:14px;background:#f0faf4;border-radius:8px;border:1px solid #b7e4c7">
-      <div style="font-size:0.85rem;font-weight:bold;color:#2d6a4f;margin-bottom:10px">📦 在庫に追加する材料を選んでください</div>
-      <div id="material-quick-btns" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
-      <div class="grid2">
-        <div>
-          <label>材料名</label>
-          <select id="e-material-id">
-            <option value="">在庫に反映しない</option>
-          </select>
-        </div>
-        <div>
-          <label>購入数量</label>
-          <div style="display:flex;gap:6px;align-items:center">
-            <input type="number" id="e-material-qty" placeholder="例: 5" min="0" style="flex:1">
-            <span id="e-material-unit" style="font-size:0.85rem;color:#666;min-width:24px"></span>
+    <div id="material-purchase-box" style="margin-top:14px;padding:14px;background:#f0faf4;border-radius:8px;border:1px solid #b7e4c7;display:none">
+      <div style="font-size:0.85rem;font-weight:bold;color:#2d6a4f;margin-bottom:10px">📦 在庫への反映</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button type="button" id="stock-yes-btn" class="btn btn-sm" style="background:#2d6a4f;color:white" onclick="setStockReflect(true)">✅ 在庫に反映する</button>
+        <button type="button" id="stock-no-btn" class="btn btn-sm" style="background:#eee;color:#666" onclick="setStockReflect(false)">⬜ 反映しない</button>
+      </div>
+      <div id="stock-reflect-form" style="display:none">
+        <div style="font-size:0.8rem;color:#666;margin-bottom:8px">よく使う材料：</div>
+        <div id="material-quick-btns" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
+        <div class="grid2">
+          <div>
+            <label>材料を選択</label>
+            <select id="e-material-id" onchange="updateMaterialUnit()">
+              <option value="">選択してください</option>
+            </select>
+          </div>
+          <div>
+            <label>購入数量</label>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input type="number" id="e-material-qty" placeholder="例: 5" min="0" style="flex:1">
+              <span id="e-material-unit" style="font-size:0.85rem;color:#666;min-width:24px"></span>
+            </div>
           </div>
         </div>
       </div>
@@ -742,14 +775,30 @@ function deleteSale(id) {
 
 // ====== EXPENSES ======
 const CAT_LABELS = {
-  material: '材料費', package: '梱包材・送料',
-  'event-fee': 'イベント出展費', transport: '交通費',
-  tools: '道具・備品', other: 'その他'
+  'mat-adan': '材料費▶アダンの葉', 'mat-parts': '材料費▶金具・パーツ',
+  'mat-beads': '材料費▶ビーズ・装飾', 'mat-wire': '材料費▶ワイヤー・真鍮',
+  'material': '材料費▶その他',
+  'package-material': '梱包材', 'shipping': '送料・配送費', 'package-label': '宛名・テープ',
+  'event-fee': 'イベント出展費', 'event-display': '展示什器', 'transport': '交通費', 'accommodation': '宿泊費',
+  'photo': '撮影費', 'ad': '広告費', 'card': '名刺・ショップカード',
+  'tools': '制作道具・備品', 'equipment': '設備・機材',
+  'fee': '手数料', 'study': '学習・資料費', 'other': 'その他'
 };
+const MAT_CATEGORIES = ['mat-adan','mat-parts','mat-beads','mat-wire','material'];
 
 function toggleMaterialSelect() {
   const cat = document.getElementById('e-category').value;
-  document.getElementById('material-purchase-box').style.display = cat === 'material' ? 'block' : 'none';
+  const box = document.getElementById('material-purchase-box');
+  box.style.display = MAT_CATEGORIES.includes(cat) ? 'block' : 'none';
+  if (!MAT_CATEGORIES.includes(cat)) setStockReflect(false);
+}
+
+function setStockReflect(yes) {
+  document.getElementById('stock-reflect-form').style.display = yes ? 'block' : 'none';
+  document.getElementById('stock-yes-btn').style.background = yes ? '#2d6a4f' : '#eee';
+  document.getElementById('stock-yes-btn').style.color = yes ? 'white' : '#666';
+  document.getElementById('stock-no-btn').style.background = yes ? '#eee' : '#555';
+  document.getElementById('stock-no-btn').style.color = yes ? '#666' : 'white';
 }
 
 function updateMaterialUnit() {
@@ -787,8 +836,9 @@ function addExpense() {
   const note = document.getElementById('e-note').value;
   if (!date || !amount) { alert('日付と金額を入力してください'); return; }
 
-  // 材料費の場合、在庫に加算
-  if (category === 'material') {
+  // 材料費かつ在庫反映ONの場合、在庫に加算
+  const stockReflectOn = document.getElementById('stock-reflect-form').style.display === 'block';
+  if (MAT_CATEGORIES.includes(category) && stockReflectOn) {
     const matId = parseInt(document.getElementById('e-material-id').value);
     const qty = parseFloat(document.getElementById('e-material-qty').value) || 0;
     if (matId && qty > 0) {
@@ -802,7 +852,7 @@ function addExpense() {
     }
   }
 
-  const matId = category === 'material' ? parseInt(document.getElementById('e-material-id').value) : null;
+  const matId = MAT_CATEGORIES.includes(category) && stockReflectOn ? parseInt(document.getElementById('e-material-id').value) : null;
   const matQty = category === 'material' ? parseFloat(document.getElementById('e-material-qty').value) || 0 : 0;
   const mats = load('materials', []);
   const matName = matId ? (mats.find(m => m.id === matId)?.name || '') : '';
