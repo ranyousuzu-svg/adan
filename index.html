@@ -332,10 +332,12 @@
         <input type="date" id="s-date">
         <label>商品</label>
         <select id="s-product">
-          <option value="yotsudatami">四つ畳編みのピアス</option>
-          <option value="squareknot">スクエアノットのピアス</option>
-          <option value="iki">粋（DW編み）のピアス</option>
-          <option value="hoku">Hoku（星型）のピアス</option>
+          <option value="kumi">① Kumi（クミ）</option>
+          <option value="pua">② Pua（プア）</option>
+          <option value="lana">③ Lana（ラナ）</option>
+          <option value="koapaka_bar">④ Koapaka 真鍮棒</option>
+          <option value="koapaka_ring">⑤ Koapaka 真鍮輪</option>
+          <option value="kulia">⑥ Kūlia（クーリア）</option>
         </select>
         <label>数量</label>
         <input type="number" id="s-qty" value="1" min="1">
@@ -530,10 +532,12 @@
 <script>
 // ====== DATA ======
 const PRODUCTS = [
-  { id: 'yotsudatami', name: '四つ畳編みのピアス' },
-  { id: 'squareknot',  name: 'スクエアノットのピアス' },
-  { id: 'iki',         name: '粋（DW編み）のピアス' },
-  { id: 'hoku',        name: 'Hoku（星型）のピアス' },
+  { id: 'kumi',         name: '① Kumi（クミ）四つ畳編み × ビーズ' },
+  { id: 'pua',          name: '② Pua（プア）スクエア / リボン編み' },
+  { id: 'lana',         name: '③ Lana（ラナ）星形ひとつぶ' },
+  { id: 'koapaka_bar',  name: '④ Koapaka（コアパカ）ダイヤモンド × 真鍮棒' },
+  { id: 'koapaka_ring', name: '⑤ Koapaka（コアパカ）ダイヤモンド × 真鍮輪' },
+  { id: 'kulia',        name: '⑥ Kūlia（クーリア）四つ畳・縦つなぎ' },
 ];
 const CHANNELS = {
   minne:   { name: 'minne',              fee: 0.10 },
@@ -1265,20 +1269,24 @@ function initDefaultCosts() {
     { name: '梱包', cost: 100 },
   ];
   save('costs', {
-    yotsudatami: { materials: defaultMats, labor_min: 120, hourly: 1400, price: 5800 },
-    squareknot:  { materials: defaultMats, labor_min: 90,  hourly: 1400, price: 4800 },
-    iki:         { materials: defaultMats, labor_min: 90,  hourly: 1400, price: 4500 },
-    hoku:        { materials: defaultMats, labor_min: 90,  hourly: 1400, price: 4200 },
+    kumi:         { materials: defaultMats, labor_min: 120, hourly: 1400, price: 5800 },
+    pua:          { materials: defaultMats, labor_min: 90,  hourly: 1400, price: 4800 },
+    lana:         { materials: defaultMats, labor_min: 90,  hourly: 1400, price: 4200 },
+    koapaka_bar:  { materials: defaultMats, labor_min: 90,  hourly: 1400, price: 0 },
+    koapaka_ring: { materials: defaultMats, labor_min: 90,  hourly: 1400, price: 0 },
+    kulia:        { materials: defaultMats, labor_min: 120, hourly: 1400, price: 0 },
   });
 }
 
 function initDefaultStock() {
   if (load('finished_stock', null)) return;
   save('finished_stock', {
-    yotsudatami: { qty: 0, min: 3 },
-    squareknot:  { qty: 0, min: 3 },
-    iki:         { qty: 0, min: 3 },
-    hoku:        { qty: 0, min: 3 },
+    kumi:         { qty: 0, min: 3 },
+    pua:          { qty: 0, min: 3 },
+    lana:         { qty: 0, min: 3 },
+    koapaka_bar:  { qty: 0, min: 3 },
+    koapaka_ring: { qty: 0, min: 3 },
+    kulia:        { qty: 0, min: 3 },
   });
 }
 
