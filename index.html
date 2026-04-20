@@ -1260,7 +1260,6 @@ function importData(event) {
 
 // ====== DEFAULT COSTS ======
 function initDefaultCosts() {
-  if (load('costs', null)) return;
   const defaultMats = [
     { name: 'アダンの葉', cost: 200 },
     { name: 'ビーズ', cost: 320 },
@@ -1269,12 +1268,12 @@ function initDefaultCosts() {
     { name: '梱包', cost: 100 },
   ];
   save('costs', {
-    kumu:         { materials: defaultMats, labor_min: 120, hourly: 1400, price: 5800 },
-    pua:          { materials: defaultMats, labor_min: 90,  hourly: 1400, price: 4800 },
+    kumu:         { materials: defaultMats, labor_min: 120, hourly: 1400, price: 6200 },
+    pua:          { materials: defaultMats, labor_min: 150, hourly: 1400, price: 6200 },
     lana:         { materials: defaultMats, labor_min: 90,  hourly: 1400, price: 4500 },
-    koapaka_bar:  { materials: defaultMats, labor_min: 120, hourly: 1400, price: 4800 },
-    koapaka_ring: { materials: defaultMats, labor_min: 120, hourly: 1400, price: 4800 },
-    kulia:        { materials: defaultMats, labor_min: 150, hourly: 1400, price: 6200 },
+    koapaka_bar:  { materials: defaultMats, labor_min: 120, hourly: 1400, price: 5200 },
+    koapaka_ring: { materials: defaultMats, labor_min: 120, hourly: 1400, price: 5200 },
+    kulia:        { materials: defaultMats, labor_min: 120, hourly: 1400, price: 5800 },
   });
 }
 
