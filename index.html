@@ -389,7 +389,7 @@
             <option value="mat-adan">材料費 ▶ アダンの葉</option>
             <option value="mat-parts">材料費 ▶ 金具・パーツ</option>
             <option value="mat-beads">材料費 ▶ ビーズ・装飾</option>
-            <option value="mat-wire">材料費 ▶ ワイヤー・真鍮</option>
+            <option value="mat-wire">材料費 ▶ サテンリボン</option>
             <option value="material">材料費 ▶ その他材料</option>
           </optgroup>
           <optgroup label="📦 梱包・発送">
@@ -431,8 +431,8 @@
     <div id="material-purchase-box" style="margin-top:14px;padding:14px;background:#f0faf4;border-radius:8px;border:1px solid #b7e4c7;display:none">
       <div style="font-size:0.85rem;font-weight:bold;color:#2d6a4f;margin-bottom:10px">📦 在庫への反映</div>
       <div style="display:flex;gap:8px;margin-bottom:12px">
-        <button type="button" id="stock-yes-btn" class="btn btn-sm" style="background:#2d6a4f;color:white" onclick="setStockReflect(true)">✅ 在庫に反映する</button>
-        <button type="button" id="stock-no-btn" class="btn btn-sm" style="background:#eee;color:#666" onclick="setStockReflect(false)">⬜ 反映しない</button>
+        <button type="button" id="stock-yes-btn" class="btn btn-sm" style="background:#eee;color:#666;border:2px solid #ccc" onclick="setStockReflect(true)">在庫に反映する</button>
+        <button type="button" id="stock-no-btn" class="btn btn-sm" style="background:#2d6a4f;color:white;border:2px solid #2d6a4f" onclick="setStockReflect(false)">反映しない ✓</button>
       </div>
       <div id="stock-reflect-form" style="display:none">
         <div style="font-size:0.8rem;color:#666;margin-bottom:8px">よく使う材料：</div>
@@ -798,10 +798,16 @@ function toggleMaterialSelect() {
 
 function setStockReflect(yes) {
   document.getElementById('stock-reflect-form').style.display = yes ? 'block' : 'none';
-  document.getElementById('stock-yes-btn').style.background = yes ? '#2d6a4f' : '#eee';
-  document.getElementById('stock-yes-btn').style.color = yes ? 'white' : '#666';
-  document.getElementById('stock-no-btn').style.background = yes ? '#eee' : '#555';
-  document.getElementById('stock-no-btn').style.color = yes ? '#666' : 'white';
+  const yBtn = document.getElementById('stock-yes-btn');
+  const nBtn = document.getElementById('stock-no-btn');
+  yBtn.style.background = yes ? '#2d6a4f' : '#eee';
+  yBtn.style.color = yes ? 'white' : '#666';
+  yBtn.style.border = yes ? '2px solid #2d6a4f' : '2px solid #ccc';
+  yBtn.textContent = yes ? '在庫に反映する ✓' : '在庫に反映する';
+  nBtn.style.background = yes ? '#eee' : '#2d6a4f';
+  nBtn.style.color = yes ? '#666' : 'white';
+  nBtn.style.border = yes ? '2px solid #ccc' : '2px solid #2d6a4f';
+  nBtn.textContent = yes ? '反映しない' : '反映しない ✓';
 }
 
 function updateMaterialUnit() {
@@ -1214,10 +1220,23 @@ let currentUser = null;
 function signInWithGoogle() {
   document.getElementById('lock-status').textContent = 'ログイン中...';
   const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider).catch(err => {
-    document.getElementById('lock-status').textContent = 'エラー: ' + err.message;
-  });
+  const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+  if (isMobile) {
+    auth.signInWithRedirect(provider).catch(err => {
+      document.getElementById('lock-status').textContent = 'エラー: ' + err.message;
+    });
+  } else {
+    auth.signInWithPopup(provider).catch(err => {
+      document.getElementById('lock-status').textContent = 'エラー: ' + err.message;
+    });
+  }
 }
+
+auth.getRedirectResult().then(result => {
+  if (result && result.user) {
+    document.getElementById('lock-screen').style.display = 'none';
+  }
+}).catch(err => { console.error('redirect error', err); });
 
 auth.onAuthStateChanged(async user => {
   if (user) {
