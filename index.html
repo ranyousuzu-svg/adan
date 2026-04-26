@@ -241,6 +241,7 @@
     📥 バックアップ読込
     <input type="file" accept=".json" onchange="importData(event)" style="display:none">
   </label>
+  <button class="btn btn-sm" style="background:#fff3cd;color:#856404;border:1px solid #ffc107" onclick="debugFirestore()">🔍 Firestore確認</button>
   <span id="sync-status" style="color:#888;font-size:0.8rem"></span>
 </div>
 
@@ -1399,6 +1400,29 @@ async function manualSync() {
       toast('同期しました！');
     }
   } catch(e) { if (el) el.textContent = '同期エラー'; }
+}
+
+async function debugFirestore() {
+  if (!currentUser) { alert('ログインしていません'); return; }
+  try {
+    const doc = await db.collection('users').doc(currentUser.uid).get();
+    if (!doc.exists) { alert('Firestoreにデータなし'); return; }
+    const data = doc.data();
+    const expenses = data.expenses || [];
+    const sales = data.sales || [];
+    const lines = [
+      `=== Firestore内のデータ確認 ===`,
+      `UID: ${currentUser.uid.slice(0,8)}...`,
+      ``,
+      `📤 支出件数: ${expenses.length}件`,
+      ...expenses.slice(-10).map((e,i) => `  ${expenses.length - 10 + i + 1}. ${e.date} ${e.cat} ¥${e.amount}`),
+      ``,
+      `🛒 売上件数: ${sales.length}件`,
+      `📦 材料件数: ${(data.materials||[]).length}件`,
+      `🎪 イベント件数: ${(data.events||[]).length}件`,
+    ];
+    alert(lines.join('\n'));
+  } catch(e) { alert('エラー: ' + e.message); }
 }
 
 async function saveToFirestore() {
