@@ -606,13 +606,20 @@ function showSection(id) {
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   event.target.classList.add('active');
+  renderCurrentSection();
+}
+
+function renderCurrentSection() {
+  const active = document.querySelector('section.active');
+  if (!active) return;
+  const id = active.id;
   if (id === 'dashboard') renderDashboard();
-  if (id === 'cost') renderCost();
-  if (id === 'sales') renderSales();
-  if (id === 'expenses') renderExpenses();
-  if (id === 'inventory') renderInventory();
-  if (id === 'events') renderEvents();
-  if (id === 'plan') renderPlan();
+  else if (id === 'cost') renderCost();
+  else if (id === 'sales') renderSales();
+  else if (id === 'expenses') renderExpenses();
+  else if (id === 'inventory') renderInventory();
+  else if (id === 'events') renderEvents();
+  else if (id === 'plan') renderPlan();
 }
 
 // ====== COST ======
@@ -1358,7 +1365,7 @@ function loadFromFirestore() {
       const data = doc.data();
       const keys = ['costs','sales','expenses','finished_stock','materials','events','plan'];
       keys.forEach(k => { if (data[k] !== undefined) localStorage.setItem('adan_' + k, JSON.stringify(data[k])); });
-      renderDashboard();
+      renderCurrentSection();
       const now = new Date().toLocaleTimeString('ja-JP');
       const el = document.getElementById('sync-status');
       if (el) el.textContent = '最終同期: ' + now;
@@ -1376,7 +1383,7 @@ async function manualSync() {
       const data = doc.data();
       const keys = ['costs','sales','expenses','finished_stock','materials','events','plan'];
       keys.forEach(k => { if (data[k] !== undefined) localStorage.setItem('adan_' + k, JSON.stringify(data[k])); });
-      renderDashboard();
+      renderCurrentSection();
       const now = new Date().toLocaleTimeString('ja-JP');
       if (el) el.textContent = '最終同期: ' + now;
       toast('同期しました！');
