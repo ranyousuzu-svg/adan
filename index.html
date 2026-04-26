@@ -342,7 +342,7 @@
           <option value="kulia">⑥ Kūlia（クーリア）</option>
         </select>
         <label>数量</label>
-        <input type="number" id="s-qty" value="1" min="1">
+        <input type="number" inputmode="numeric" id="s-qty" value="1" min="1">
       </div>
       <div>
         <label>販路</label>
@@ -354,7 +354,7 @@
           <option value="other">その他</option>
         </select>
         <label>販売価格（1個あたり・税込）</label>
-        <input type="number" id="s-price" placeholder="例: 1500">
+        <input type="number" inputmode="numeric" id="s-price" placeholder="例: 1500">
         <label>メモ</label>
         <input type="text" id="s-note" placeholder="任意">
       </div>
@@ -424,7 +424,7 @@
       </div>
       <div>
         <label>金額（円）</label>
-        <input type="number" id="e-amount" placeholder="例: 2000">
+        <input type="number" inputmode="numeric" id="e-amount" placeholder="例: 2000">
         <label>内容メモ</label>
         <input type="text" id="e-note" placeholder="例: アダンの葉 10束">
       </div>
@@ -450,7 +450,7 @@
           <div>
             <label>購入数量</label>
             <div style="display:flex;gap:6px;align-items:center">
-              <input type="number" id="e-material-qty" placeholder="例: 5" min="0" style="flex:1">
+              <input type="number" inputmode="numeric" id="e-material-qty" placeholder="例: 5" min="0" style="flex:1">
               <span id="e-material-unit" style="font-size:0.85rem;color:#666;min-width:24px"></span>
             </div>
           </div>
@@ -501,13 +501,13 @@
         <label>開催日</label>
         <input type="date" id="ev-date">
         <label>出展費（円）</label>
-        <input type="number" id="ev-fee" placeholder="例: 5000">
+        <input type="number" inputmode="numeric" id="ev-fee" placeholder="例: 5000">
       </div>
       <div>
         <label>交通費（円）</label>
-        <input type="number" id="ev-transport" placeholder="例: 800">
+        <input type="number" inputmode="numeric" id="ev-transport" placeholder="例: 800">
         <label>売上合計（円）</label>
-        <input type="number" id="ev-sales" placeholder="イベント終了後に入力">
+        <input type="number" inputmode="numeric" id="ev-sales" placeholder="イベント終了後に入力">
         <label>メモ</label>
         <textarea id="ev-note" rows="2" placeholder="場所・感想など"></textarea>
       </div>
@@ -532,15 +532,15 @@
     <div class="grid3">
       <div>
         <label>目標売上（円）</label>
-        <input type="number" id="plan-sales" placeholder="例: 30000">
+        <input type="number" inputmode="numeric" id="plan-sales" placeholder="例: 30000">
       </div>
       <div>
         <label>目標製作数（合計）</label>
-        <input type="number" id="plan-qty" placeholder="例: 20">
+        <input type="number" inputmode="numeric" id="plan-qty" placeholder="例: 20">
       </div>
       <div>
         <label>予算（材料費・円）</label>
-        <input type="number" id="plan-budget" placeholder="例: 5000">
+        <input type="number" inputmode="numeric" id="plan-budget" placeholder="例: 5000">
       </div>
     </div>
     <div class="flex-end">
@@ -557,7 +557,7 @@
     <h2>販路別手数料シミュレーター</h2>
     <p style="font-size:0.8rem;color:#888;margin-bottom:12px">販売価格を入力すると各販路の手取り額を計算します</p>
     <label>販売価格（円）</label>
-    <input type="number" id="sim-price" placeholder="例: 1500" oninput="calcSim()">
+    <input type="number" inputmode="numeric" id="sim-price" placeholder="例: 1500" oninput="calcSim()">
     <div id="sim-result" class="mt"></div>
   </div>
 
@@ -646,7 +646,7 @@ function renderCost() {
     c.materials.forEach((m, i) => {
       html += `<div class="cost-row">
         <input class="cost-name" type="text" value="${m.name}" id="mat-name-${p.id}-${i}" placeholder="材料名">
-        <input type="number" value="${m.cost}" id="mat-cost-${p.id}-${i}" placeholder="円" style="max-width:100px">
+        <input type="number" inputmode="numeric" value="${m.cost}" id="mat-cost-${p.id}-${i}" placeholder="円" style="max-width:100px">
         <span style="font-size:0.8rem">円</span>
       </div>`;
     });
@@ -655,15 +655,15 @@ function renderCost() {
       <div class="grid2">
         <div>
           <label>製作時間（分）</label>
-          <input type="number" id="labor-${p.id}" value="${c.labor_min}" min="1">
+          <input type="number" inputmode="numeric" id="labor-${p.id}" value="${c.labor_min}" min="1">
         </div>
         <div>
           <label>自分の時給（円）</label>
-          <input type="number" id="hourly-${p.id}" value="${c.hourly}" min="0">
+          <input type="number" inputmode="numeric" id="hourly-${p.id}" value="${c.hourly}" min="0">
         </div>
       </div>
       <label>販売希望価格（円）</label>
-      <input type="number" id="price-${p.id}" value="${c.price}" placeholder="例: 1500">
+      <input type="number" inputmode="numeric" id="price-${p.id}" value="${c.price}" placeholder="例: 1500">
       <div id="cost-result-${p.id}" style="margin-top:10px;padding:10px;background:#f9f9f9;border-radius:6px;font-size:0.82rem"></div>
     </div>`;
   });
@@ -677,7 +677,7 @@ function addMatRow(pid) {
   const div = document.createElement('div');
   div.className = 'cost-row';
   div.innerHTML = `<input class="cost-name" type="text" id="mat-name-${pid}-${idx}" placeholder="材料名">
-    <input type="number" id="mat-cost-${pid}-${idx}" placeholder="円" style="max-width:100px">
+    <input type="number" inputmode="numeric" id="mat-cost-${pid}-${idx}" placeholder="円" style="max-width:100px">
     <span style="font-size:0.8rem">円</span>`;
   container.appendChild(div);
 }
@@ -1004,8 +1004,8 @@ function renderInventory() {
     const warn = s.qty <= s.min;
     html += `<tr>
       <td>${p.name}</td>
-      <td><input type="number" id="fs-qty-${p.id}" value="${s.qty}" min="0" style="width:80px" class="${warn ? 'stock-warn' : ''}"> 個</td>
-      <td><input type="number" id="fs-min-${p.id}" value="${s.min}" min="0" style="width:60px"> 個</td>
+      <td><input type="number" inputmode="numeric" id="fs-qty-${p.id}" value="${s.qty}" min="0" style="width:80px" class="${warn ? 'stock-warn' : ''}"> 個</td>
+      <td><input type="number" inputmode="numeric" id="fs-min-${p.id}" value="${s.min}" min="0" style="width:60px"> 個</td>
       <td>${warn ? '<span class="stock-warn">⚠️ 補充推奨</span>' : '<span class="stock-ok">✓</span>'}</td>
     </tr>`;
   });
@@ -1037,10 +1037,10 @@ function renderMaterials() {
     const warn = m.qty <= m.min;
     html += `<tr>
       <td><input type="text" id="m-name-${i}" value="${m.name}" style="min-width:120px"></td>
-      <td><input type="number" id="m-qty-${i}" value="${m.qty}" min="0" style="width:70px"></td>
+      <td><input type="number" inputmode="numeric" id="m-qty-${i}" value="${m.qty}" min="0" style="width:70px"></td>
       <td><input type="text" id="m-unit-${i}" value="${m.unit}" style="width:60px"></td>
-      <td><input type="number" id="m-min-${i}" value="${m.min}" min="0" style="width:70px"></td>
-      <td><input type="number" id="m-cost-${i}" value="${m.cost_per}" min="0" style="width:80px"></td>
+      <td><input type="number" inputmode="numeric" id="m-min-${i}" value="${m.min}" min="0" style="width:70px"></td>
+      <td><input type="number" inputmode="numeric" id="m-cost-${i}" value="${m.cost_per}" min="0" style="width:80px"></td>
       <td>${warn ? '<span class="stock-warn">⚠️ 要補充</span>' : '<span class="stock-ok">✓</span>'}</td>
       <td><button class="btn btn-danger btn-sm" onclick="deleteMaterial(${m.id})">削除</button></td>
     </tr>`;
