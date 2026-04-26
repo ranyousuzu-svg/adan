@@ -358,8 +358,10 @@
         <input type="text" id="s-note" placeholder="任意">
       </div>
     </div>
+    <input type="hidden" id="s-editing-id" value="">
     <div class="flex-end">
-      <button class="btn btn-primary" onclick="addSale()">＋ 追加</button>
+      <button class="btn btn-sm" id="s-cancel-btn" style="background:#eee;display:none" onclick="cancelEditSale()">キャンセル</button>
+      <button class="btn btn-primary" id="s-submit-btn" onclick="addSale()">＋ 追加</button>
     </div>
   </div>
 
@@ -431,10 +433,10 @@
     <div id="material-purchase-box" style="margin-top:14px;padding:14px;background:#f0faf4;border-radius:8px;border:1px solid #b7e4c7;display:none">
       <div style="font-size:0.85rem;font-weight:bold;color:#2d6a4f;margin-bottom:10px">📦 在庫への反映</div>
       <div style="display:flex;gap:8px;margin-bottom:12px">
-        <button type="button" id="stock-yes-btn" class="btn btn-sm" style="background:#eee;color:#666;border:2px solid #ccc" onclick="setStockReflect(true)">在庫に反映する</button>
-        <button type="button" id="stock-no-btn" class="btn btn-sm" style="background:#2d6a4f;color:white;border:2px solid #2d6a4f" onclick="setStockReflect(false)">反映しない ✓</button>
+        <button type="button" id="stock-yes-btn" class="btn btn-sm" style="background:#2d6a4f;color:white;border:2px solid #2d6a4f" onclick="setStockReflect(true)">在庫に反映する ✓</button>
+        <button type="button" id="stock-no-btn" class="btn btn-sm" style="background:#eee;color:#666;border:2px solid #ccc" onclick="setStockReflect(false)">反映しない</button>
       </div>
-      <div id="stock-reflect-form" style="display:none">
+      <div id="stock-reflect-form" style="display:block">
         <div style="font-size:0.8rem;color:#666;margin-bottom:8px">よく使う材料：</div>
         <div id="material-quick-btns" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
         <div class="grid2">
@@ -455,8 +457,10 @@
       </div>
     </div>
 
+    <input type="hidden" id="e-editing-id" value="">
     <div class="flex-end">
-      <button class="btn btn-primary" onclick="addExpense()">＋ 追加</button>
+      <button class="btn btn-sm" id="e-cancel-btn" style="background:#eee;display:none" onclick="cancelEditExpense()">キャンセル</button>
+      <button class="btn btn-primary" id="e-submit-btn" onclick="addExpense()">＋ 追加</button>
     </div>
   </div>
 
@@ -507,8 +511,10 @@
         <textarea id="ev-note" rows="2" placeholder="場所・感想など"></textarea>
       </div>
     </div>
+    <input type="hidden" id="ev-editing-id" value="">
     <div class="flex-end">
-      <button class="btn btn-primary" onclick="addEvent()">＋ 追加</button>
+      <button class="btn btn-sm" id="ev-cancel-btn" style="background:#eee;display:none" onclick="cancelEditEvent()">キャンセル</button>
+      <button class="btn btn-primary" id="ev-submit-btn" onclick="addEvent()">＋ 追加</button>
     </div>
   </div>
 
@@ -724,12 +730,41 @@ function addSale() {
   if (!date || !price) { alert('日付と価格を入力してください'); return; }
   const fee = CHANNELS[channel].fee;
   const net = price * qty * (1 - fee);
-  sales.push({ id: Date.now(), date, product, qty, channel, price, note, net });
+  const editingId = parseInt(document.getElementById('s-editing-id').value);
+  if (editingId) {
+    const idx = sales.findIndex(s => s.id === editingId);
+    if (idx !== -1) sales[idx] = { ...sales[idx], date, product, qty, channel, price, note, net };
+    toast('売上を更新しました');
+  } else {
+    sales.push({ id: Date.now(), date, product, qty, channel, price, note, net });
+    toast('売上を追加しました');
+  }
   save('sales', sales);
+  cancelEditSale();
+  renderSales();
+}
+
+function editSale(id) {
+  const r = load('sales', []).find(s => s.id === id);
+  if (!r) return;
+  document.getElementById('s-date').value = r.date;
+  document.getElementById('s-product').value = r.product;
+  document.getElementById('s-qty').value = r.qty;
+  document.getElementById('s-channel').value = r.channel;
+  document.getElementById('s-price').value = r.price;
+  document.getElementById('s-note').value = r.note || '';
+  document.getElementById('s-editing-id').value = id;
+  document.getElementById('s-submit-btn').textContent = '✏️ 更新';
+  document.getElementById('s-cancel-btn').style.display = 'inline-block';
+  document.querySelector('#sales .card h2').scrollIntoView({ behavior: 'smooth' });
+}
+
+function cancelEditSale() {
+  document.getElementById('s-editing-id').value = '';
   document.getElementById('s-price').value = '';
   document.getElementById('s-note').value = '';
-  toast('売上を追加しました');
-  renderSales();
+  document.getElementById('s-submit-btn').textContent = '＋ 追加';
+  document.getElementById('s-cancel-btn').style.display = 'none';
 }
 
 function filterSales(ch, btn) {
@@ -759,7 +794,7 @@ function renderSalesTable(chFilter) {
       <td>¥${r.price.toLocaleString()}</td>
       <td>¥${gross.toLocaleString()}</td>
       <td>¥${Math.round(r.net).toLocaleString()} <span class="channel-fee">(手数料${(CHANNELS[r.channel].fee*100).toFixed(0)}%)</span></td>
-      <td><button class="btn btn-danger" onclick="deleteSale(${r.id})">削除</button></td>
+      <td style="white-space:nowrap"><button class="btn btn-sm" style="background:#e8f5e9;color:#2d6a4f;margin-right:4px" onclick="editSale(${r.id})">編集</button><button class="btn btn-danger" onclick="deleteSale(${r.id})">削除</button></td>
     </tr>`;
   });
   html += `</tbody><tfoot><tr><td colspan="5" style="text-align:right;font-weight:bold">合計</td>
@@ -792,8 +827,12 @@ const MAT_CATEGORIES = ['mat-adan','mat-parts','mat-beads','mat-wire','material'
 function toggleMaterialSelect() {
   const cat = document.getElementById('e-category').value;
   const box = document.getElementById('material-purchase-box');
-  box.style.display = MAT_CATEGORIES.includes(cat) ? 'block' : 'none';
-  if (!MAT_CATEGORIES.includes(cat)) setStockReflect(false);
+  if (MAT_CATEGORIES.includes(cat)) {
+    box.style.display = 'block';
+    setStockReflect(true);
+  } else {
+    box.style.display = 'none';
+  }
 }
 
 function setStockReflect(yes) {
@@ -865,12 +904,18 @@ function addExpense() {
   const matQty = category === 'material' ? parseFloat(document.getElementById('e-material-qty').value) || 0 : 0;
   const mats = load('materials', []);
   const matName = matId ? (mats.find(m => m.id === matId)?.name || '') : '';
-  expenses.push({ id: Date.now(), date, category, amount, note, matName, matQty });
+  const editingId = parseInt(document.getElementById('e-editing-id').value);
+  if (editingId) {
+    const idx = expenses.findIndex(e => e.id === editingId);
+    if (idx !== -1) expenses[idx] = { ...expenses[idx], date, category, amount, note, matName, matQty };
+    toast('支出を更新しました');
+  } else {
+    expenses.push({ id: Date.now(), date, category, amount, note, matName, matQty });
+    toast('支出を追加しました');
+  }
   save('expenses', expenses);
-  document.getElementById('e-amount').value = '';
-  document.getElementById('e-note').value = '';
   document.getElementById('e-material-qty').value = '';
-  toast('支出を追加しました');
+  cancelEditExpense();
   renderExpenses();
 }
 
@@ -889,12 +934,34 @@ function renderExpenses() {
       <td>${CAT_LABELS[r.category] || r.category}</td>
       <td>¥${r.amount.toLocaleString()}</td>
       <td>${r.note}${matInfo}</td>
-      <td><button class="btn btn-danger" onclick="deleteExpense(${r.id})">削除</button></td>
+      <td style="white-space:nowrap"><button class="btn btn-sm" style="background:#e8f5e9;color:#2d6a4f;margin-right:4px" onclick="editExpense(${r.id})">編集</button><button class="btn btn-danger" onclick="deleteExpense(${r.id})">削除</button></td>
     </tr>`;
   });
   html += `</tbody><tfoot><tr><td colspan="2" style="text-align:right;font-weight:bold">合計</td>
     <td>¥${total.toLocaleString()}</td><td colspan="2"></td></tr></tfoot></table>`;
   document.getElementById('expenses-table').innerHTML = html;
+}
+
+function editExpense(id) {
+  const r = load('expenses', []).find(e => e.id === id);
+  if (!r) return;
+  document.getElementById('e-date').value = r.date;
+  document.getElementById('e-category').value = r.category;
+  document.getElementById('e-amount').value = r.amount;
+  document.getElementById('e-note').value = r.note || '';
+  document.getElementById('e-editing-id').value = id;
+  document.getElementById('e-submit-btn').textContent = '✏️ 更新';
+  document.getElementById('e-cancel-btn').style.display = 'inline-block';
+  toggleMaterialSelect();
+  document.querySelector('#expenses .card h2').scrollIntoView({ behavior: 'smooth' });
+}
+
+function cancelEditExpense() {
+  document.getElementById('e-editing-id').value = '';
+  document.getElementById('e-amount').value = '';
+  document.getElementById('e-note').value = '';
+  document.getElementById('e-submit-btn').textContent = '＋ 追加';
+  document.getElementById('e-cancel-btn').style.display = 'none';
 }
 
 function deleteExpense(id) {
@@ -1004,10 +1071,17 @@ function addEvent() {
   const sales = parseFloat(document.getElementById('ev-sales').value) || 0;
   const note = document.getElementById('ev-note').value;
   if (!name || !date) { alert('イベント名と日付を入力してください'); return; }
-  events.push({ id: Date.now(), name, date, fee, transport, sales, note });
+  const editingId = parseInt(document.getElementById('ev-editing-id').value);
+  if (editingId) {
+    const idx = events.findIndex(e => e.id === editingId);
+    if (idx !== -1) events[idx] = { ...events[idx], name, date, fee, transport, sales, note };
+    toast('イベントを更新しました');
+  } else {
+    events.push({ id: Date.now(), name, date, fee, transport, sales, note });
+    toast('イベントを追加しました');
+  }
   save('events', events);
-  ['ev-name','ev-date','ev-fee','ev-transport','ev-sales','ev-note'].forEach(id => document.getElementById(id).value = '');
-  toast('イベントを追加しました');
+  cancelEditEvent();
   renderEvents();
 }
 
@@ -1028,11 +1102,33 @@ function renderEvents() {
       <td>¥${r.sales.toLocaleString()}</td>
       <td style="color:${ok?'#2d6a4f':'#e74c3c'}">¥${profit.toLocaleString()}</td>
       <td>${ok ? '✅ 黒字' : r.sales === 0 ? '⏳ 未入力' : '🔴 赤字'}</td>
-      <td><button class="btn btn-danger" onclick="deleteEvent(${r.id})">削除</button></td>
+      <td style="white-space:nowrap"><button class="btn btn-sm" style="background:#e8f5e9;color:#2d6a4f;margin-right:4px" onclick="editEvent(${r.id})">編集</button><button class="btn btn-danger" onclick="deleteEvent(${r.id})">削除</button></td>
     </tr>`;
   });
   html += '</tbody></table>';
   document.getElementById('events-table').innerHTML = html;
+}
+
+function editEvent(id) {
+  const r = load('events', []).find(e => e.id === id);
+  if (!r) return;
+  document.getElementById('ev-name').value = r.name;
+  document.getElementById('ev-date').value = r.date;
+  document.getElementById('ev-fee').value = r.fee;
+  document.getElementById('ev-transport').value = r.transport;
+  document.getElementById('ev-sales').value = r.sales;
+  document.getElementById('ev-note').value = r.note || '';
+  document.getElementById('ev-editing-id').value = id;
+  document.getElementById('ev-submit-btn').textContent = '✏️ 更新';
+  document.getElementById('ev-cancel-btn').style.display = 'inline-block';
+  document.querySelector('#events .card h2').scrollIntoView({ behavior: 'smooth' });
+}
+
+function cancelEditEvent() {
+  document.getElementById('ev-editing-id').value = '';
+  ['ev-name','ev-date','ev-fee','ev-transport','ev-sales','ev-note'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ev-submit-btn').textContent = '＋ 追加';
+  document.getElementById('ev-cancel-btn').style.display = 'none';
 }
 
 function deleteEvent(id) {
