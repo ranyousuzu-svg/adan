@@ -1385,13 +1385,24 @@ async function manualSync() {
 }
 
 async function saveToFirestore() {
-  if (!currentUser) return;
+  if (!currentUser) {
+    const el = document.getElementById('sync-status');
+    if (el) el.textContent = '⚠️ 未ログイン（データはこの端末のみ保存）';
+    return;
+  }
   try {
     const keys = ['costs','sales','expenses','finished_stock','materials','events','plan'];
     const data = {};
     keys.forEach(k => { data[k] = load(k, null); });
     await db.collection('users').doc(currentUser.uid).set(data);
-  } catch(e) { console.error('Firestore保存エラー', e); }
+    const now = new Date().toLocaleTimeString('ja-JP');
+    const el = document.getElementById('sync-status');
+    if (el) el.textContent = '✅ 同期済み: ' + now;
+  } catch(e) {
+    const el = document.getElementById('sync-status');
+    if (el) el.textContent = '❌ 同期失敗: ' + e.code;
+    console.error('Firestore保存エラー', e);
+  }
 }
 
 // ====== EXPORT / IMPORT ======
