@@ -433,26 +433,19 @@
     <!-- 材料費のとき専用 -->
     <div id="material-purchase-box" style="margin-top:14px;padding:14px;background:#f0faf4;border-radius:8px;border:1px solid #b7e4c7;display:none">
       <div style="font-size:0.85rem;font-weight:bold;color:#2d6a4f;margin-bottom:10px">📦 在庫への反映</div>
-      <div style="display:flex;gap:8px;margin-bottom:12px">
-        <button type="button" id="stock-yes-btn" class="btn btn-sm" style="background:#2d6a4f;color:white;border:2px solid #2d6a4f" onclick="setStockReflect(true)">在庫に反映する ✓</button>
-        <button type="button" id="stock-no-btn" class="btn btn-sm" style="background:#eee;color:#666;border:2px solid #ccc" onclick="setStockReflect(false)">反映しない</button>
-      </div>
-      <div id="stock-reflect-form" style="display:block">
-        <div style="font-size:0.8rem;color:#666;margin-bottom:8px">よく使う材料：</div>
-        <div id="material-quick-btns" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
-        <div class="grid2">
-          <div>
-            <label>材料を選択</label>
-            <select id="e-material-id" onchange="updateMaterialUnit()">
-              <option value="">選択してください</option>
-            </select>
-          </div>
-          <div>
-            <label>購入数量</label>
-            <div style="display:flex;gap:6px;align-items:center">
-              <input type="number" inputmode="numeric" id="e-material-qty" placeholder="例: 5" min="0" style="flex:1">
-              <span id="e-material-unit" style="font-size:0.85rem;color:#666;min-width:24px"></span>
-            </div>
+      <div class="grid2">
+        <div>
+          <label>在庫に反映する材料を選択</label>
+          <select id="e-material-id" onchange="updateMaterialUnit()">
+            <option value="">反映しない（選択なし）</option>
+          </select>
+          <div style="font-size:0.78rem;color:#888;margin-top:4px">材料を選ぶと在庫数が増えます</div>
+        </div>
+        <div id="e-material-qty-box" style="display:none">
+          <label>購入数量</label>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="number" inputmode="numeric" id="e-material-qty" placeholder="例: 5" min="0" style="flex:1">
+            <span id="e-material-unit" style="font-size:0.85rem;color:#666;min-width:24px"></span>
           </div>
         </div>
       </div>
@@ -848,24 +841,10 @@ function toggleMaterialSelect() {
   const box = document.getElementById('material-purchase-box');
   if (MAT_CATEGORIES.includes(cat)) {
     box.style.display = 'block';
-    setStockReflect(true);
+    renderMaterialQuickBtns();
   } else {
     box.style.display = 'none';
   }
-}
-
-function setStockReflect(yes) {
-  document.getElementById('stock-reflect-form').style.display = yes ? 'block' : 'none';
-  const yBtn = document.getElementById('stock-yes-btn');
-  const nBtn = document.getElementById('stock-no-btn');
-  yBtn.style.background = yes ? '#2d6a4f' : '#eee';
-  yBtn.style.color = yes ? 'white' : '#666';
-  yBtn.style.border = yes ? '2px solid #2d6a4f' : '2px solid #ccc';
-  yBtn.textContent = yes ? '在庫に反映する ✓' : '在庫に反映する';
-  nBtn.style.background = yes ? '#eee' : '#2d6a4f';
-  nBtn.style.color = yes ? '#666' : 'white';
-  nBtn.style.border = yes ? '2px solid #ccc' : '2px solid #2d6a4f';
-  nBtn.textContent = yes ? '反映しない' : '反映しない ✓';
 }
 
 function updateMaterialUnit() {
@@ -873,26 +852,22 @@ function updateMaterialUnit() {
   const id = parseInt(document.getElementById('e-material-id').value);
   const mat = mats.find(m => m.id === id);
   document.getElementById('e-material-unit').textContent = mat ? mat.unit : '';
-}
-
-function selectQuickMaterial(id) {
-  document.getElementById('e-material-id').value = id;
-  updateMaterialUnit();
-  document.querySelectorAll('.quick-mat-btn').forEach(b => b.style.fontWeight = 'normal');
-  document.getElementById('qbtn-' + id).style.fontWeight = 'bold';
+  // 材料が選ばれたら数量欄を表示
+  const qtyBox = document.getElementById('e-material-qty-box');
+  if (qtyBox) qtyBox.style.display = mat ? 'block' : 'none';
 }
 
 function renderMaterialQuickBtns() {
   const mats = load('materials', []);
   const sel = document.getElementById('e-material-id');
-  sel.innerHTML = '<option value="">在庫に反映しない</option>';
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">反映しない（選択なし）</option>';
   mats.forEach(m => {
     sel.innerHTML += `<option value="${m.id}">${m.name}（${m.unit}）</option>`;
   });
-  const box = document.getElementById('material-quick-btns');
-  box.innerHTML = mats.map(m =>
-    `<button id="qbtn-${m.id}" class="quick-mat-btn btn btn-sm" style="background:#d8f3dc;color:#2d6a4f" onclick="selectQuickMaterial(${m.id})">${m.name}</button>`
-  ).join('');
+  // 以前の選択を復元
+  if (prev) sel.value = prev;
+  updateMaterialUnit();
 }
 
 function addExpense() {
@@ -903,24 +878,18 @@ function addExpense() {
   const note = document.getElementById('e-note').value;
   if (!date || !amount) { alert('日付と金額を入力してください'); return; }
 
-  // 材料費かつ在庫反映ONの場合、在庫に加算
-  const stockReflectOn = document.getElementById('stock-reflect-form').style.display === 'block';
-  if (MAT_CATEGORIES.includes(category) && stockReflectOn) {
-    const matId = parseInt(document.getElementById('e-material-id').value);
-    const qty = parseFloat(document.getElementById('e-material-qty').value) || 0;
-    if (matId && qty > 0) {
-      const mats = load('materials', []);
-      const mat = mats.find(m => m.id === matId);
-      if (mat) {
-        mat.qty += qty;
-        save('materials', mats);
-        toast(`${mat.name}の在庫を${qty}${mat.unit}追加しました`);
-      }
+  // 材料が選択されていれば在庫に加算
+  const matId = MAT_CATEGORIES.includes(category) ? parseInt(document.getElementById('e-material-id').value) || null : null;
+  const matQty = matId ? parseFloat(document.getElementById('e-material-qty').value) || 0 : 0;
+  if (matId && matQty > 0) {
+    const mats = load('materials', []);
+    const mat = mats.find(m => m.id === matId);
+    if (mat) {
+      mat.qty += matQty;
+      save('materials', mats);
+      toast(`${mat.name}の在庫を${matQty}${mat.unit}追加しました`);
     }
   }
-
-  const matId = MAT_CATEGORIES.includes(category) && stockReflectOn ? parseInt(document.getElementById('e-material-id').value) : null;
-  const matQty = category === 'material' ? parseFloat(document.getElementById('e-material-qty').value) || 0 : 0;
   const mats = load('materials', []);
   const matName = matId ? (mats.find(m => m.id === matId)?.name || '') : '';
   const editingId = parseInt(document.getElementById('e-editing-id').value);
@@ -940,7 +909,6 @@ function addExpense() {
 
 function renderExpenses() {
   toggleMaterialSelect();
-  renderMaterialQuickBtns();
   const expenses = load('expenses', []);
   const sorted = [...expenses].sort((a,b) => b.date.localeCompare(a.date));
   const total = sorted.reduce((s, r) => s + r.amount, 0);
