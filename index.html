@@ -1357,8 +1357,6 @@ auth.onAuthStateChanged(async user => {
     currentUser = user;
     document.getElementById('lock-screen').style.display = 'none';
     loadFromFirestore();
-    initDefaultCosts();
-    initDefaultStock();
     const today = new Date().toISOString().split('T')[0];
     ['s-date','e-date'].forEach(id => { const el = document.getElementById(id); if(el) el.value = today; });
     renderDashboard();
@@ -1371,15 +1369,17 @@ auth.onAuthStateChanged(async user => {
 function loadFromFirestore() {
   if (!currentUser) return;
   db.collection('users').doc(currentUser.uid).onSnapshot(doc => {
+    const keys = ['costs','sales','expenses','finished_stock','materials','events','plan'];
     if (doc.exists) {
       const data = doc.data();
-      const keys = ['costs','sales','expenses','finished_stock','materials','events','plan'];
       keys.forEach(k => { if (data[k] !== undefined) localStorage.setItem('adan_' + k, JSON.stringify(data[k])); });
-      renderCurrentSection();
-      const now = new Date().toLocaleTimeString('ja-JP');
-      const el = document.getElementById('sync-status');
-      if (el) el.textContent = '最終同期: ' + now;
     }
+    initDefaultCosts();
+    initDefaultStock();
+    renderCurrentSection();
+    const now = new Date().toLocaleTimeString('ja-JP');
+    const el = document.getElementById('sync-status');
+    if (el) el.textContent = '最終同期: ' + now;
   }, e => { console.error('Firestore同期エラー', e); });
 }
 
@@ -1457,6 +1457,7 @@ function importData(event) {
 
 // ====== DEFAULT COSTS ======
 function initDefaultCosts() {
+  if (load('costs', null)) return;
   const defaultMats = [
     { name: 'アダンの葉', cost: 200 },
     { name: 'ビーズ', cost: 320 },
@@ -1475,7 +1476,7 @@ function initDefaultCosts() {
 }
 
 function initDefaultStock() {
-  if (load('finished_stock', null)) return;
+  if (load('finished_stock', null) && Object.keys(load('finished_stock', {})).includes('kumu')) return;
   save('finished_stock', {
     kumu:         { qty: 0, min: 3 },
     pua:          { qty: 0, min: 3 },
