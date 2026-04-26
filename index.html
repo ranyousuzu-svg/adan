@@ -622,6 +622,16 @@ function renderCurrentSection() {
   else if (id === 'plan') renderPlan();
 }
 
+function renderAll() {
+  renderDashboard();
+  renderCost();
+  renderSales();
+  renderExpenses();
+  renderInventory();
+  renderEvents();
+  renderPlan();
+}
+
 // ====== COST ======
 function renderCost() {
   const costs = load('costs', {});
@@ -1383,7 +1393,7 @@ async function manualSync() {
       const data = doc.data();
       const keys = ['costs','sales','expenses','finished_stock','materials','events','plan'];
       keys.forEach(k => { if (data[k] !== undefined) localStorage.setItem('adan_' + k, JSON.stringify(data[k])); });
-      renderCurrentSection();
+      renderAll();
       const now = new Date().toLocaleTimeString('ja-JP');
       if (el) el.textContent = '最終同期: ' + now;
       toast('同期しました！');
