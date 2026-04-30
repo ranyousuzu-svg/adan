@@ -1,360 +1,248 @@
 """
-琉球音階（レ・ラ抜き）三線ベースBGM
-Karplus-Strong合成で弦をはじく音を再現
+琉球音階 三線BGM 改良版
+- Karplus-Strong: ハニング窓励振 + 微小ランダム減衰（有機的な揺らぎ）
+- 複数弦のデチューンで自然なコーラス感
+- タイミング/強さのヒューマナイズ
+- 不規則な反射時間の自然なリバーブ（尾部ローパス）
+- 各曲 28 秒（15-30秒素材として使いやすい長さ）
+- テンポ 62-68 BPM（アダンの森・父の収穫相当）
 """
 
 import numpy as np
 import wave
+from scipy.signal import butter, sosfilt
 
 SR = 44100
-DURATION = 63
+DUR = 28
 
-# 琉球音階の周波数（C, E, F, G, B）レとラを含まない
-def hz(note, octave):
-    semis = {'C': 0, 'E': 4, 'F': 5, 'G': 7, 'B': 11}
-    return 440.0 * 2 ** ((semis[note] + (octave - 4) * 12 - 9) / 12)
+# 琉球音階（レ・ラ抜き） C E F G B
+def hz(note, oct):
+    s = {'C':0,'E':4,'F':5,'G':7,'B':11}
+    return 440.0 * 2**((s[note] + (oct-4)*12 - 9)/12)
 
-N = {}
-for n in ['C','E','F','G','B']:
-    for o in range(2, 7):
-        N[f'{n}{o}'] = hz(n, o)
+N = {f'{n}{o}': hz(n,o) for n in 'CEFGB' for o in range(2,7)}
 
 
-def ks(freq, dur, amp=0.75, damping=0.997):
-    """Karplus-Strong プラックドストリング合成"""
+# ── 音合成 ───────────────────────────────────────────────
+
+def ks(freq, dur, amp, damping):
+    """Karplus-Strong: ハニング窓励振 + 微小ランダム減衰"""
     delay = max(2, int(round(SR / freq)))
     n = int(SR * dur)
     buf = np.zeros(delay)
-    # 励振：短いノイズバースト（弦をはじく）
-    excite = min(delay, max(2, int(delay * 0.5)))
-    buf[:excite] = np.random.randn(excite) * amp
+    ex = min(delay, max(2, int(delay * 0.55)))
+    buf[:ex] = np.random.randn(ex) * np.hanning(ex) * amp
+    dv = np.random.randn(n) * 6e-5          # 減衰の微小変動（有機感）
     out = np.zeros(n)
     idx = 0
     for i in range(n):
         out[i] = buf[idx]
         nxt = (idx + 1) % delay
-        buf[idx] = damping * 0.5 * (buf[idx] + buf[nxt])
+        buf[idx] = (damping + dv[i]) * 0.5 * (buf[idx] + buf[nxt])
         idx = nxt
     return out
 
+def sanshin(freq, dur, amp=0.70):
+    """3弦わずかにデチューン → 自然なコーラス・うなり"""
+    tail = dur + 0.7
+    s1 = ks(freq,          tail, amp*0.65, 0.9974)
+    s2 = ks(freq * 1.0022, tail, amp*0.23, 0.9969)
+    s3 = ks(freq * 0.9990, tail, amp*0.12, 0.9978)
+    # 攻撃部に短いクリック（バチで弾く感触）
+    ck_n = int(0.003 * SR)
+    click = np.random.randn(ck_n) * amp * 0.18 * np.exp(-np.linspace(0,18,ck_n))
+    combined = s1 + s2 + s3
+    combined[:ck_n] += click
+    return combined
 
-def sanshin(freq, dur, amp=0.72):
-    """三線らしい音：KS + 明るい倍音（サワリ感）"""
-    base = ks(freq, dur + 0.4, amp * 0.82, damping=0.9975)
-    t = np.linspace(0, dur + 0.4, len(base))
-    # 高速減衰する倍音でサワリ感（三線特有の明るさ）
-    buzz_decay = np.exp(-12 * t)
-    buzz = amp * 0.18 * np.sin(2 * np.pi * freq * 2 * t) * buzz_decay
-    buzz += amp * 0.07 * np.sin(2 * np.pi * freq * 3 * t) * buzz_decay
-    return base + buzz
-
-
-def place(buf, freq, start_s, dur_s, amp=0.68):
-    note = sanshin(freq, dur_s, amp)
-    s = int(start_s * SR)
+def place(buf, freq, t0, dur, amp=0.68):
+    """タイミング・強さにヒューマナイズ"""
+    t0 = max(0.0, t0 + np.random.uniform(-0.020, 0.020))
+    amp = amp * np.random.uniform(0.93, 1.07)
+    note = sanshin(freq, dur, amp)
+    s = int(t0 * SR)
     e = min(s + len(note), len(buf))
-    buf[s:e] += note[:e - s]
+    if s < len(buf):
+        buf[s:e] += note[:e-s]
 
+
+# ── 背景 ─────────────────────────────────────────────────
 
 def ocean(dur):
-    """波のアンビエントパッド"""
     n = int(dur * SR)
-    noise = np.random.randn(n) * 0.014
-    kernel = np.ones(4000) / 4000
-    filtered = np.convolve(noise, kernel, mode='same')
+    raw = np.random.randn(n) * 0.011
+    filt = np.convolve(raw, np.ones(5500)/5500, mode='same')
     t = np.linspace(0, dur, n)
-    swell = 0.65 + 0.35 * np.sin(2 * np.pi * 0.06 * t) * np.sin(2 * np.pi * 0.09 * t)
-    return filtered * swell
+    return filt * (0.60 + 0.40 * np.sin(2*np.pi*0.060*t) * np.sin(2*np.pi*0.088*t))
+
+def drone(freq, dur, amp=0.07):
+    t = np.linspace(0, dur, int(dur*SR))
+    return amp*(np.sin(2*np.pi*freq*t)+0.30*np.sin(2*np.pi*freq*2*t)) \
+           *(1+0.018*np.sin(2*np.pi*0.10*t))
 
 
-def bass_drone(freq, dur, amp=0.10):
-    """低音ドローン（背景の支え）"""
-    t = np.linspace(0, dur, int(dur * SR))
-    lfo = 1 + 0.03 * np.sin(2 * np.pi * 0.15 * t)
-    wave = amp * np.sin(2 * np.pi * freq * t) * lfo
-    wave += amp * 0.4 * np.sin(2 * np.pi * freq * 2 * t) * lfo
-    return wave
+# ── エフェクト ────────────────────────────────────────────
 
-
-def reverb(sig, ms=75, decay=0.32):
-    d = int(ms * SR / 1000)
+def natural_reverb(sig):
+    """不規則な反射タップ + 尾部ローパスで有機的な空間感"""
+    sos = butter(3, 4200/(SR/2), btype='low', output='sos')
+    taps = [
+        (0.021,0.44),(0.039,0.36),(0.063,0.28),
+        (0.094,0.22),(0.138,0.17),(0.195,0.12),
+        (0.271,0.08),(0.376,0.05),(0.501,0.03),
+    ]
     out = sig.copy()
-    for i in range(1, 5):
-        dd = d * i
-        if dd < len(sig):
-            delayed = np.zeros_like(sig)
-            delayed[dd:] = sig[:-dd] * (decay ** i)
-            out += delayed
-    return out * 0.70
-
+    for ds, g in taps:
+        d = int(ds * SR)
+        if d < len(sig):
+            tail = np.zeros_like(sig)
+            tail[d:] = sig[:-d] * g
+            out += sosfilt(sos, tail)
+    return out * 0.60
 
 def save(fname, sig):
-    sig = sig / (np.max(np.abs(sig)) + 1e-9) * 0.88
+    fade = int(1.8 * SR)
+    sig[-fade:] *= np.linspace(1, 0, fade)
+    sig /= (np.max(np.abs(sig)) + 1e-9)
+    sig *= 0.86
     with wave.open(fname, 'w') as wf:
-        wf.setnchannels(1)
-        wf.setsampwidth(2)
-        wf.setframerate(SR)
+        wf.setnchannels(1); wf.setsampwidth(2); wf.setframerate(SR)
         wf.writeframes((sig * 32767).astype(np.int16).tobytes())
     print(f'Saved: {fname}')
 
 
-# ============================================================
-# Track 1: 波打ち際の朝  52BPM  ゆったり単線メロディ
-# ============================================================
+# ── Track 1: 波打ち際の朝  62 BPM ─────────────────────────
+# G→E→F→G→E→C  空白  B→G→E→F→G→C  ゆったり下降解決
 def track1():
-    buf = np.zeros(int(DURATION * SR))
-    buf += ocean(DURATION) * 1.3
-    buf += bass_drone(N['C3'], DURATION, 0.09)
-    buf += bass_drone(N['G3'], DURATION, 0.05)
+    buf = np.zeros(int(DUR * SR))
+    buf += ocean(DUR) * 1.30
+    buf += drone(N['C3'], DUR, 0.085)
+    buf += drone(N['G3'], DUR, 0.045)
 
-    b = 60 / 52  # 1拍 ≈ 1.15s
-
+    b = 60/62   # 0.968 s/beat
     mel = [
-        # フレーズA：Gから下りてCへ解決
-        (N['G4'], 0*b,    2*b,  0.70),
-        (N['E4'], 2*b,    1.5*b,0.65),
-        (N['F4'], 3.5*b,  1*b,  0.62),
-        (N['G4'], 4.5*b,  1.5*b,0.68),
-        (N['E4'], 6*b,    2*b,  0.65),
-        (N['C4'], 8*b,    3.5*b,0.72),  # 解決・長め
-
-        # フレーズB：上へ広がる
-        (N['E4'], 12*b,   1*b,  0.63),
-        (N['G4'], 13*b,   1.5*b,0.68),
-        (N['B4'], 14.5*b, 2.5*b,0.72),
-        (N['G4'], 17*b,   1.5*b,0.65),
-        (N['F4'], 18.5*b, 1*b,  0.60),
-        (N['E4'], 19.5*b, 1.5*b,0.65),
-        (N['G4'], 21*b,   1*b,  0.62),
-        (N['C4'], 22*b,   4*b,  0.72),  # 長い解決
-
-        # フレーズC：少し変化
-        (N['G4'], 27*b,   1.5*b,0.68),
-        (N['B4'], 28.5*b, 2*b,  0.70),
-        (N['C5'], 30.5*b, 2.5*b,0.65),
-        (N['B4'], 33*b,   1.5*b,0.62),
-        (N['G4'], 34.5*b, 1.5*b,0.65),
-        (N['F4'], 36*b,   1*b,  0.60),
-        (N['E4'], 37*b,   1.5*b,0.65),
-        (N['C4'], 38.5*b, 3.5*b,0.72),
-
-        # フレーズD（締め）
-        (N['G4'], 43*b,   1.5*b,0.68),
-        (N['E4'], 44.5*b, 1*b,  0.62),
-        (N['F4'], 45.5*b, 1.5*b,0.63),
-        (N['G4'], 47*b,   2*b,  0.68),
-        (N['E4'], 49*b,   1.5*b,0.65),
-        (N['C4'], 50.5*b, 5*b,  0.72),  # 長い終止
+        # フレーズA：G→E→F→G→E→C（長い解決）
+        (N['G4'], 0.0*b,   2.0*b, 0.72),
+        (N['E4'], 2.0*b,   1.5*b, 0.67),
+        (N['F4'], 3.5*b,   1.0*b, 0.63),
+        (N['G4'], 4.5*b,   1.5*b, 0.70),
+        (N['E4'], 6.0*b,   2.0*b, 0.68),
+        (N['C4'], 8.0*b,   4.0*b, 0.74),   # ← 長い解決
+        # フレーズB：B→G→E→F→G→C
+        (N['B4'], 13.5*b,  2.0*b, 0.68),
+        (N['G4'], 15.5*b,  1.5*b, 0.65),
+        (N['E4'], 17.0*b,  1.0*b, 0.63),
+        (N['F4'], 18.0*b,  0.8*b, 0.60),
+        (N['G4'], 18.8*b,  1.5*b, 0.68),
+        (N['E4'], 20.3*b,  1.2*b, 0.65),
+        (N['C4'], 21.5*b,  5.5*b, 0.74),   # ← 締め・長い余韻
     ]
-    for (f, st, dur, amp) in mel:
-        if st < DURATION:
-            place(buf, f, st, min(dur, DURATION - st), amp)
-
-    buf = reverb(buf, ms=80, decay=0.30)
-    save('track1_naminoasa.wav', buf)
+    for f, t, d, a in mel:
+        if t < DUR: place(buf, f, t, min(d, DUR-t), a)
+    save('track1_naminoasa.wav', natural_reverb(buf))
 
 
-# ============================================================
-# Track 2: アダンの森  60BPM  流れるアルペジオ＋メロディ
-# ============================================================
+# ── Track 2: アダンの森  64 BPM ──────────────────────────
+# 流れるように連なるメロディ・少し動きが多い
 def track2():
-    buf = np.zeros(int(DURATION * SR))
-    buf += ocean(DURATION) * 0.9
-    buf += bass_drone(N['C3'], DURATION, 0.08)
-    buf += bass_drone(N['E3'], DURATION, 0.04)
+    buf = np.zeros(int(DUR * SR))
+    buf += ocean(DUR) * 0.90
+    buf += drone(N['C3'], DUR, 0.075)
+    buf += drone(N['E3'], DUR, 0.040)
 
-    b = 60 / 60  # 1拍 = 1.0s
-
-    # 低音アルペジオ（背景）
-    arp = [
-        (N['C3'], 0.50), (N['E3'], 0.50), (N['G3'], 0.50), (N['C4'], 0.50),
-    ]
-    t = 0.0
-    while t < DURATION - 2:
-        for (f, dur) in arp:
-            place(buf, f, t, dur, amp=0.30)
-            t += dur
-        t += 0.0  # 休みなし・流れるように
-
-    # 上声メロディ（流れる旋律）
+    b = 60/64   # 0.9375 s/beat
     mel = [
-        # フレーズA
-        (N['E4'], 0*b,    1.5*b, 0.65),
-        (N['G4'], 1.5*b,  1*b,   0.68),
-        (N['B4'], 2.5*b,  2*b,   0.72),
-        (N['G4'], 4.5*b,  1*b,   0.65),
-        (N['F4'], 5.5*b,  0.5*b, 0.60),
-        (N['E4'], 6*b,    2*b,   0.67),
-        (N['C4'], 8*b,    2.5*b, 0.70),
-
-        # フレーズB（上へ）
-        (N['G4'], 11*b,   1*b,   0.65),
-        (N['B4'], 12*b,   1.5*b, 0.70),
-        (N['C5'], 13.5*b, 2.5*b, 0.68),
-        (N['B4'], 16*b,   1*b,   0.62),
-        (N['G4'], 17*b,   1*b,   0.65),
-        (N['E4'], 18*b,   1.5*b, 0.65),
-        (N['F4'], 19.5*b, 0.5*b, 0.58),
-        (N['G4'], 20*b,   2.5*b, 0.68),
-        (N['C4'], 22.5*b, 2.5*b, 0.72),
-
-        # フレーズC（高音域）
-        (N['E5'], 26*b,   1.5*b, 0.60),
-        (N['G5'], 27.5*b, 2*b,   0.55),
-        (N['F5'], 29.5*b, 1*b,   0.58),
-        (N['E5'], 30.5*b, 1.5*b, 0.60),
-        (N['C5'], 32*b,   2*b,   0.65),
-        (N['B4'], 34*b,   1.5*b, 0.63),
-        (N['G4'], 35.5*b, 1*b,   0.65),
-        (N['F4'], 36.5*b, 0.5*b, 0.58),
-        (N['E4'], 37*b,   2*b,   0.65),
-        (N['C4'], 39*b,   2.5*b, 0.70),
-
-        # フレーズD（締め）
-        (N['G4'], 42.5*b, 1.5*b, 0.68),
-        (N['B4'], 44*b,   2*b,   0.70),
-        (N['G4'], 46*b,   1*b,   0.63),
-        (N['E4'], 47*b,   1*b,   0.63),
-        (N['F4'], 48*b,   1*b,   0.60),
-        (N['G4'], 49*b,   1.5*b, 0.65),
-        (N['E4'], 50.5*b, 1*b,   0.62),
-        (N['C4'], 51.5*b, 5*b,   0.70),
+        # フレーズA：上へ広がる
+        (N['E4'], 0.0*b,  1.5*b, 0.65),
+        (N['G4'], 1.5*b,  1.0*b, 0.68),
+        (N['B4'], 2.5*b,  2.0*b, 0.72),
+        (N['G4'], 4.5*b,  1.0*b, 0.65),
+        (N['F4'], 5.5*b,  0.7*b, 0.60),
+        (N['E4'], 6.2*b,  1.5*b, 0.67),
+        (N['C4'], 7.7*b,  2.8*b, 0.72),
+        # フレーズB：高音域へ
+        (N['G4'], 11.2*b, 1.0*b, 0.65),
+        (N['B4'], 12.2*b, 1.5*b, 0.70),
+        (N['C5'], 13.7*b, 2.0*b, 0.67),
+        (N['B4'], 15.7*b, 1.0*b, 0.63),
+        (N['G4'], 16.7*b, 1.0*b, 0.65),
+        (N['F4'], 17.7*b, 0.7*b, 0.60),
+        (N['E4'], 18.4*b, 1.0*b, 0.65),
+        (N['G4'], 19.4*b, 1.5*b, 0.68),
+        (N['C4'], 20.9*b, 5.0*b, 0.72),
     ]
-    for (f, st, dur, amp) in mel:
-        if st < DURATION:
-            place(buf, f, st, min(dur, DURATION - st), amp)
-
-    buf = reverb(buf, ms=70, decay=0.28)
-    save('track2_mori_no_kaze.wav', buf)
+    for f, t, d, a in mel:
+        if t < DUR: place(buf, f, t, min(d, DUR-t), a)
+    save('track2_mori_no_kaze.wav', natural_reverb(buf))
 
 
-# ============================================================
-# Track 3: 父の収穫  68BPM  力強く弾む
-# ============================================================
+# ── Track 3: 父の収穫  68 BPM ─────────────────────────────
+# 力強く弾む・テンポ感あり
 def track3():
-    buf = np.zeros(int(DURATION * SR))
-    buf += ocean(DURATION) * 0.65
-    buf += bass_drone(N['C3'], DURATION, 0.10)
-    buf += bass_drone(N['G3'], DURATION, 0.06)
+    buf = np.zeros(int(DUR * SR))
+    buf += ocean(DUR) * 0.65
+    buf += drone(N['C3'], DUR, 0.090)
+    buf += drone(N['G3'], DUR, 0.055)
 
-    b = 60 / 68  # 1拍 ≈ 0.88s
-
+    b = 60/68   # 0.882 s/beat
     mel = [
         # 力強いイントロ
-        (N['G4'], 0*b,    1*b,   0.80),
-        (N['C4'], 1*b,    1.5*b, 0.78),
-        (N['E4'], 2.5*b,  0.5*b, 0.72),
-        (N['G4'], 3*b,    1.5*b, 0.80),
-
+        (N['G4'], 0.0*b,  1.0*b, 0.80),
+        (N['C4'], 1.0*b,  1.5*b, 0.78),
+        (N['E4'], 2.5*b,  0.6*b, 0.72),
+        (N['G4'], 3.1*b,  1.5*b, 0.80),
         # フレーズA
-        (N['B4'], 5*b,    1.5*b, 0.75),
-        (N['G4'], 6.5*b,  0.5*b, 0.70),
-        (N['F4'], 7*b,    1*b,   0.68),
-        (N['E4'], 8*b,    1*b,   0.72),
-        (N['G4'], 9*b,    1.5*b, 0.75),
-        (N['C4'], 10.5*b, 2.5*b, 0.78),
-
+        (N['B4'], 5.0*b,  1.5*b, 0.76),
+        (N['G4'], 6.5*b,  0.6*b, 0.70),
+        (N['F4'], 7.1*b,  0.8*b, 0.67),
+        (N['E4'], 7.9*b,  1.0*b, 0.72),
+        (N['G4'], 8.9*b,  1.5*b, 0.76),
+        (N['C4'], 10.4*b, 2.5*b, 0.80),
         # フレーズB
-        (N['E4'], 14*b,   0.5*b, 0.70),
-        (N['G4'], 14.5*b, 1*b,   0.75),
-        (N['B4'], 15.5*b, 1.5*b, 0.78),
-        (N['C5'], 17*b,   2*b,   0.72),
-        (N['B4'], 19*b,   0.5*b, 0.68),
-        (N['G4'], 19.5*b, 1*b,   0.72),
-        (N['F4'], 20.5*b, 0.5*b, 0.65),
-        (N['E4'], 21*b,   1.5*b, 0.72),
-        (N['C4'], 22.5*b, 2.5*b, 0.78),
-
-        # フレーズC（反復・力強く）
-        (N['G4'], 26*b,   0.5*b, 0.80),
-        (N['E4'], 26.5*b, 0.5*b, 0.75),
-        (N['G4'], 27*b,   1*b,   0.80),
-        (N['B4'], 28*b,   1.5*b, 0.78),
-        (N['G4'], 29.5*b, 0.5*b, 0.72),
-        (N['F4'], 30*b,   1*b,   0.68),
-        (N['G4'], 31*b,   1.5*b, 0.75),
-        (N['E4'], 32.5*b, 1*b,   0.70),
-        (N['C4'], 33.5*b, 2.5*b, 0.78),
-
-        # フレーズD
-        (N['C5'], 37*b,   1.5*b, 0.70),
-        (N['B4'], 38.5*b, 0.5*b, 0.65),
-        (N['G4'], 39*b,   1*b,   0.72),
-        (N['F4'], 40*b,   0.5*b, 0.65),
-        (N['E4'], 40.5*b, 1*b,   0.70),
-        (N['G4'], 41.5*b, 1.5*b, 0.75),
-        (N['C4'], 43*b,   2.5*b, 0.80),
-
-        # 締め
-        (N['G4'], 46.5*b, 1*b,   0.78),
-        (N['E4'], 47.5*b, 0.5*b, 0.72),
-        (N['F4'], 48*b,   0.5*b, 0.68),
-        (N['G4'], 48.5*b, 1*b,   0.75),
-        (N['C4'], 49.5*b, 5*b,   0.80),
+        (N['E4'], 13.5*b, 0.6*b, 0.70),
+        (N['G4'], 14.1*b, 1.0*b, 0.75),
+        (N['B4'], 15.1*b, 1.5*b, 0.78),
+        (N['C5'], 16.6*b, 2.0*b, 0.72),
+        (N['B4'], 18.6*b, 0.6*b, 0.67),
+        (N['G4'], 19.2*b, 0.8*b, 0.70),
+        (N['F4'], 20.0*b, 0.6*b, 0.65),
+        (N['E4'], 20.6*b, 1.0*b, 0.70),
+        (N['C4'], 21.6*b, 5.5*b, 0.80),
     ]
-    for (f, st, dur, amp) in mel:
-        if st < DURATION:
-            place(buf, f, st, min(dur, DURATION - st), amp)
-
-    buf = reverb(buf, ms=60, decay=0.25)
-    save('track3_chichi_no_shukaku.wav', buf)
+    for f, t, d, a in mel:
+        if t < DUR: place(buf, f, t, min(d, DUR-t), a)
+    save('track3_chichi_no_shukaku.wav', natural_reverb(buf))
 
 
-# ============================================================
-# Track 4: アダンピアス  50BPM  最もゆったり・瞑想的
-# ============================================================
+# ── Track 4: アダンピアス  60 BPM ────────────────────────
+# 最もゆったり・沈黙を大切に
 def track4():
-    buf = np.zeros(int(DURATION * SR))
-    buf += ocean(DURATION) * 1.5
-    buf += bass_drone(N['C3'], DURATION, 0.11)
-    buf += bass_drone(N['G3'], DURATION, 0.06)
-    buf += bass_drone(N['C2'], DURATION, 0.05)
+    buf = np.zeros(int(DUR * SR))
+    buf += ocean(DUR) * 1.50
+    buf += drone(N['C3'], DUR, 0.100)
+    buf += drone(N['G3'], DUR, 0.055)
+    buf += drone(N['C2'], DUR, 0.045)
 
-    b = 60 / 50  # 1拍 = 1.2s
-
+    b = 60/60   # 1.0 s/beat
     mel = [
-        # 息の長い単音・沈黙を大事に
-        (N['E4'], 1*b,    3*b,   0.65),
-        (N['C4'], 5*b,    3.5*b, 0.70),
+        (N['E4'], 1.0*b,  3.0*b, 0.66),
+        (N['C4'], 5.5*b,  3.5*b, 0.72),
         # 沈黙 2拍
-
-        (N['G4'], 11*b,   2.5*b, 0.68),
-        (N['B4'], 14*b,   3*b,   0.65),
+        (N['G4'], 11.5*b, 2.5*b, 0.68),
+        (N['B4'], 14.5*b, 3.0*b, 0.65),
         # 沈黙 1.5拍
-
-        (N['G4'], 19.5*b, 2*b,   0.65),
-        (N['F4'], 22*b,   1.5*b, 0.60),
-        (N['E4'], 24*b,   3.5*b, 0.67),
-        # 沈黙 1拍
-
-        (N['C4'], 29.5*b, 4*b,   0.72),  # 長い解決
-        # 沈黙 1.5拍
-
-        (N['B4'], 36*b,   2.5*b, 0.63),
-        (N['G4'], 39*b,   2*b,   0.65),
-        (N['F4'], 41.5*b, 1.5*b, 0.60),
-        (N['E4'], 43.5*b, 3*b,   0.67),
-        # 沈黙 1拍
-
-        (N['C4'], 48*b,   6*b,   0.72),  # 最後の長い余韻
+        (N['G4'], 19.5*b, 2.0*b, 0.65),
+        (N['F4'], 22.0*b, 1.5*b, 0.60),
+        (N['E4'], 24.0*b, 1.5*b, 0.65),
+        (N['C4'], 26.0*b, 5.0*b, 0.72),
     ]
-    for (f, st, dur, amp) in mel:
-        if st < DURATION:
-            place(buf, f, st, min(dur, DURATION - st), amp)
-
-    buf = reverb(buf, ms=100, decay=0.38)
-    save('track4_adan_pierce.wav', buf)
+    for f, t, d, a in mel:
+        if t < DUR: place(buf, f, t, min(d, DUR-t), a)
+    save('track4_adan_pierce.wav', natural_reverb(buf))
 
 
 if __name__ == '__main__':
-    np.random.seed(42)
-    print('三線音源生成中...')
-    track1()
-    track2()
-    track3()
-    track4()
-    print('\n完成！')
-    print('  track1_naminoasa.wav      - 波打ち際の朝（52BPM）')
-    print('  track2_mori_no_kaze.wav   - アダンの森（60BPM）')
-    print('  track3_chichi_no_shukaku.wav - 父の収穫（68BPM）')
-    print('  track4_adan_pierce.wav    - アダンピアス（50BPM）')
+    np.random.seed(7)
+    print('生成中...')
+    track1(); track2(); track3(); track4()
+    print('\n完成（各28秒）')
