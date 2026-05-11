@@ -333,15 +333,19 @@
       <div>
         <label>日付</label>
         <input type="date" id="s-date">
-        <label>商品</label>
-        <select id="s-product">
-          <option value="kumu">① Kumu（クム）</option>
-          <option value="pua">② Pua（プア）</option>
-          <option value="lana">③ Lana（ラナ）</option>
-          <option value="koapaka_bar">④ Koapaka DW棒状</option>
-          <option value="koapaka_ring">⑤ Koapaka DW輪状</option>
-          <option value="kulia">⑥ Kūlia（クーリア）</option>
+        <label>中分類</label>
+        <select id="s-mid" onchange="updateSubSelect('s-mid','s-sub-box','s-sub')">
+          <option value="凪（大）">凪（大）</option>
+          <option value="凪（小）">凪（小）</option>
+          <option value="フープ">フープ</option>
+          <option value="リボン">リボン</option>
+          <option value="雫">雫</option>
+          <option value="星">星</option>
         </select>
+        <div id="s-sub-box">
+          <label>小分類</label>
+          <select id="s-sub"></select>
+        </div>
         <label>数量</label>
         <input type="number" inputmode="numeric" id="s-qty" value="1" min="1">
       </div>
@@ -571,29 +575,45 @@
 // ====== DATA ======
 const PRODUCTS = [
   // 凪（大）
-  { id: 'nagi_l_1', name: '① 凪（大）空の青' },
-  { id: 'nagi_l_2', name: '② 凪（大）海の青' },
-  { id: 'nagi_l_3', name: '③ 凪（大）深い海' },
-  { id: 'nagi_l_4', name: '④ 凪（大）夏の緑' },
-  { id: 'nagi_l_5', name: '⑤ 凪（大）新緑' },
-  { id: 'nagi_l_6', name: '⑥ 凪（大）夏の夕陽' },
+  { id: 'nagi_l_1', name: '凪（大）空の青',          mid: '凪（大）', sub: '空の青' },
+  { id: 'nagi_l_2', name: '凪（大）海の青',          mid: '凪（大）', sub: '海の青' },
+  { id: 'nagi_l_3', name: '凪（大）深い海',          mid: '凪（大）', sub: '深い海' },
+  { id: 'nagi_l_4', name: '凪（大）夏の緑',          mid: '凪（大）', sub: '夏の緑' },
+  { id: 'nagi_l_5', name: '凪（大）新緑',            mid: '凪（大）', sub: '新緑' },
+  { id: 'nagi_l_6', name: '凪（大）夏の夕陽',        mid: '凪（大）', sub: '夏の夕陽' },
   // 凪（小）
-  { id: 'nagi_s_1', name: '⑦ 凪（小）空の青' },
-  { id: 'nagi_s_2', name: '⑧ 凪（小）海の青' },
-  { id: 'nagi_s_3', name: '⑨ 凪（小）深い海' },
-  { id: 'nagi_s_4', name: '⑩ 凪（小）夏の緑' },
-  { id: 'nagi_s_5', name: '⑪ 凪（小）新緑' },
-  { id: 'nagi_s_6', name: '⑫ 凪（小）夏の夕陽' },
+  { id: 'nagi_s_1', name: '凪（小）空の青',          mid: '凪（小）', sub: '空の青' },
+  { id: 'nagi_s_2', name: '凪（小）海の青',          mid: '凪（小）', sub: '海の青' },
+  { id: 'nagi_s_3', name: '凪（小）深い海',          mid: '凪（小）', sub: '深い海' },
+  { id: 'nagi_s_4', name: '凪（小）夏の緑',          mid: '凪（小）', sub: '夏の緑' },
+  { id: 'nagi_s_5', name: '凪（小）新緑',            mid: '凪（小）', sub: '新緑' },
+  { id: 'nagi_s_6', name: '凪（小）夏の夕陽',        mid: '凪（小）', sub: '夏の夕陽' },
   // フープ
-  { id: 'hoop',     name: '⑬ フープ' },
+  { id: 'hoop',     name: 'フープ',                  mid: 'フープ',   sub: '' },
   // リボン
-  { id: 'ribbon_1', name: '⑭ リボン〜海の青〜' },
-  { id: 'ribbon_2', name: '⑮ リボン〜空の青〜' },
-  { id: 'ribbon_3', name: '⑯ リボン〜深い海〜' },
+  { id: 'ribbon_1', name: 'リボン〜プルメリア〜',    mid: 'リボン',   sub: 'プルメリア' },
+  { id: 'ribbon_2', name: 'リボン〜ハイビスカス〜',  mid: 'リボン',   sub: 'ハイビスカス' },
+  { id: 'ribbon_3', name: 'リボン〜海〜',            mid: 'リボン',   sub: '海' },
+  { id: 'ribbon_4', name: 'リボン〜空〜',            mid: 'リボン',   sub: '空' },
+  { id: 'ribbon_5', name: 'リボン〜ガジュマル〜',    mid: 'リボン',   sub: 'ガジュマル' },
+  { id: 'ribbon_6', name: 'リボン〜ブーゲンビレア〜',mid: 'リボン',   sub: 'ブーゲンビレア' },
+  { id: 'ribbon_7', name: 'リボン〜マンゴー〜',      mid: 'リボン',   sub: 'マンゴー' },
+  // 雫・星
+  { id: 'shizuku',  name: '雫',                      mid: '雫',       sub: '' },
+  { id: 'hoshi',    name: '星',                      mid: '星',       sub: '' },
 ];
+const SUB_CATEGORIES = {
+  '凪（大）': ['空の青','海の青','深い海','夏の緑','新緑','夏の夕陽'],
+  '凪（小）': ['空の青','海の青','深い海','夏の緑','新緑','夏の夕陽'],
+  'フープ':   [],
+  'リボン':   ['プルメリア','ハイビスカス','海','空','ガジュマル','ブーゲンビレア','マンゴー'],
+  '雫':       [],
+  '星':       [],
+};
+const MID_NAMES = ['凪（大）','凪（小）','フープ','リボン','雫','星'];
 const CHANNELS = {
   creema:      { name: 'Creema',             fee: 0.22 },
-  makabe:      { name: '真壁ちなー',           fee: 0.30 },
+  makabe:      { name: '真壁ちなー',           fee: 0.20 },
   minne:       { name: 'minne',              fee: 0.10 },
   consignment: { name: '委託販売',            fee: 0.30 },
   event:       { name: 'ハンドメイドマーケット', fee: 0 },
@@ -748,10 +768,31 @@ function renderCostSummary() {
 }
 
 // ====== SALES ======
+function updateSubSelect(midId, boxId, subId) {
+  const mid = document.getElementById(midId).value;
+  const subs = SUB_CATEGORIES[mid] || [];
+  const box = document.getElementById(boxId);
+  const sel = document.getElementById(subId);
+  if (subs.length === 0) {
+    box.style.display = 'none';
+  } else {
+    box.style.display = 'block';
+    sel.innerHTML = subs.map(s => `<option value="${s}">${s}</option>`).join('');
+  }
+}
+
+function getProductId(midId, subId) {
+  const mid = document.getElementById(midId).value;
+  const sub = (document.getElementById(subId)?.value) || '';
+  const p = PRODUCTS.find(p => p.mid === mid && p.sub === sub);
+  return p ? p.id : null;
+}
+
 function addSale() {
   const sales = load('sales', []);
   const date = document.getElementById('s-date').value;
-  const product = document.getElementById('s-product').value;
+  const product = getProductId('s-mid', 's-sub');
+  if (!product) { alert('商品を選択してください'); return; }
   const qty = parseInt(document.getElementById('s-qty').value) || 1;
   const channel = document.getElementById('s-channel').value;
   const price = parseFloat(document.getElementById('s-price').value) || 0;
@@ -777,7 +818,13 @@ function editSale(id) {
   const r = load('sales', []).find(s => s.id === id);
   if (!r) return;
   document.getElementById('s-date').value = r.date;
-  document.getElementById('s-product').value = r.product;
+  // 中分類・小分類を復元
+  const p = PRODUCTS.find(pr => pr.id === r.product);
+  if (p) {
+    document.getElementById('s-mid').value = p.mid;
+    updateSubSelect('s-mid','s-sub-box','s-sub');
+    if (p.sub) document.getElementById('s-sub').value = p.sub;
+  }
   document.getElementById('s-qty').value = r.qty;
   document.getElementById('s-channel').value = r.channel;
   document.getElementById('s-price').value = r.price;
@@ -1483,15 +1530,18 @@ function initDefaultCosts() {
 }
 
 function initDefaultStock() {
-  if (load('finished_stock', null) && Object.keys(load('finished_stock', {})).includes('nagi_l_1')) return;
-  const stockObj = {};
-  PRODUCTS.forEach(p => { stockObj[p.id] = { qty: 0, min: 3 }; });
+  const existing = load('finished_stock', null);
+  if (existing && Object.keys(existing).includes('nagi_l_1') && Object.keys(existing).includes('shizuku')) return;
+  const stockObj = existing || {};
+  PRODUCTS.forEach(p => { if (!stockObj[p.id]) stockObj[p.id] = { qty: 0, min: 3 }; });
   save('finished_stock', stockObj);
 }
 
 // ====== INIT ======
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('lock-screen').style.display = 'flex';
+  // 中分類の初期選択に合わせて小分類を初期化
+  updateSubSelect('s-mid','s-sub-box','s-sub');
 });
 </script>
 </body>
