@@ -354,8 +354,6 @@
         <select id="s-channel">
           <option value="creema">Creema</option>
           <option value="makabe">真壁ちなー</option>
-          <option value="minne">minne</option>
-          <option value="consignment">委託販売</option>
           <option value="event">ハンドメイドマーケット</option>
           <option value="other">その他</option>
         </select>
@@ -378,7 +376,6 @@
       <button class="tab-btn active" onclick="filterSales('all',this)">すべて</button>
       <button class="tab-btn" onclick="filterSales('creema',this)">Creema</button>
       <button class="tab-btn" onclick="filterSales('makabe',this)">真壁ちなー</button>
-      <button class="tab-btn" onclick="filterSales('minne',this)">minne</button>
       <button class="tab-btn" onclick="filterSales('event',this)">イベント</button>
     </div>
     <div id="sales-table"></div>
@@ -614,8 +611,6 @@ const MID_NAMES = ['凪（大）','凪（小）','フープ','リボン','雫','
 const CHANNELS = {
   creema:      { name: 'Creema',             fee: 0.22 },
   makabe:      { name: '真壁ちなー',           fee: 0.20 },
-  minne:       { name: 'minne',              fee: 0.10 },
-  consignment: { name: '委託販売',            fee: 0.30 },
   event:       { name: 'ハンドメイドマーケット', fee: 0 },
   other:       { name: 'その他',              fee: 0 },
 };
