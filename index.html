@@ -496,10 +496,14 @@
 <section id="inventory">
   <div class="card">
     <h2>完成品在庫</h2>
-    <table>
-      <thead><tr><th>商品名</th><th>在庫数</th><th>最低在庫数</th><th>操作</th></tr></thead>
-      <tbody id="finished-stock-tbody"></tbody>
-    </table>
+    <div class="tabs-inner" style="margin-bottom:14px">
+      <button class="tab-btn active" onclick="switchStockTab('creema',this)">Creema</button>
+      <button class="tab-btn" onclick="switchStockTab('makabe',this)">真壁ちなー</button>
+      <button class="tab-btn" onclick="switchStockTab('event',this)">イベント</button>
+      <button class="tab-btn" onclick="switchStockTab('other',this)">その他</button>
+      <button class="tab-btn" onclick="switchStockTab('all',this)">📊 全体</button>
+    </div>
+    <div id="finished-stock-content"></div>
     <button class="btn btn-primary mt btn-sm" onclick="saveFinishedStock()">💾 保存</button>
   </div>
 
@@ -1085,38 +1089,105 @@ function deleteExpense(id) {
 }
 
 // ====== INVENTORY ======
-function renderInventory() {
-  const stock = load('finished_stock', {
-    yotsudatami: { qty: 0, min: 3 },
-    squareknot: { qty: 0, min: 3 },
-    tbd: { qty: 0, min: 2 },
-  });
-  let html = '';
+const STOCK_CHANNELS = [
+  { key: 'creema', name: 'Creema' },
+  { key: 'makabe', name: '真壁ちなー' },
+  { key: 'event',  name: 'イベント' },
+  { key: 'other',  name: 'その他' },
+];
+let currentStockTab = 'creema';
+
+function migrateStock(raw) {
+  // 旧形式 { qty, min } → 新形式 { creema, makabe, event, other, min } に変換
+  const out = {};
   PRODUCTS.forEach(p => {
-    const s = stock[p.id] || { qty: 0, min: 2 };
-    const warn = s.qty <= s.min;
-    html += `<tr>
-      <td>${p.name}</td>
-      <td><input type="number" inputmode="numeric" id="fs-qty-${p.id}" value="${s.qty}" min="0" style="width:80px" class="${warn ? 'stock-warn' : ''}"> 個</td>
-      <td><input type="number" inputmode="numeric" id="fs-min-${p.id}" value="${s.min}" min="0" style="width:60px"> 個</td>
-      <td>${warn ? '<span class="stock-warn">⚠️ 補充推奨</span>' : '<span class="stock-ok">✓</span>'}</td>
-    </tr>`;
+    const s = raw[p.id];
+    if (!s) {
+      out[p.id] = { creema:0, makabe:0, event:0, other:0, min:3 };
+    } else if (typeof s.qty !== 'undefined') {
+      // 旧形式: 合計数をcreemaに入れて移行
+      out[p.id] = { creema: s.qty||0, makabe:0, event:0, other:0, min: s.min||3 };
+    } else {
+      out[p.id] = { creema:s.creema||0, makabe:s.makabe||0, event:s.event||0, other:s.other||0, min:s.min||3 };
+    }
   });
-  document.getElementById('finished-stock-tbody').innerHTML = html;
+  return out;
+}
+
+function switchStockTab(tab, btn) {
+  currentStockTab = tab;
+  document.querySelectorAll('#inventory .tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderStockTable();
+}
+
+function renderInventory() {
+  renderStockTable();
   renderMaterials();
 }
 
+function renderStockTable() {
+  const raw   = load('finished_stock', {});
+  const stock = migrateStock(raw);
+  const tab   = currentStockTab;
+  let html = '';
+
+  if (tab === 'all') {
+    // 全体集計タブ
+    html = `<table><thead><tr><th>商品名</th>`;
+    STOCK_CHANNELS.forEach(c => { html += `<th>${c.name}</th>`; });
+    html += `<th>合計</th><th>最低在庫</th><th>状態</th></tr></thead><tbody>`;
+    PRODUCTS.forEach(p => {
+      const s = stock[p.id] || { creema:0, makabe:0, event:0, other:0, min:3 };
+      const total = STOCK_CHANNELS.reduce((sum, c) => sum + (s[c.key]||0), 0);
+      const warn = total <= s.min;
+      html += `<tr>
+        <td>${p.name}</td>`;
+      STOCK_CHANNELS.forEach(c => { html += `<td style="text-align:center">${s[c.key]||0}</td>`; });
+      html += `<td style="text-align:center;font-weight:bold;color:${warn?'#e74c3c':'#2d6a4f'}">${total}</td>
+        <td><input type="number" inputmode="numeric" id="fs-min-${p.id}" value="${s.min}" min="0" style="width:55px"> 個</td>
+        <td>${warn ? '<span class="stock-warn">⚠️ 補充</span>' : '<span class="stock-ok">✓</span>'}</td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+  } else {
+    // 販路別タブ
+    const chName = STOCK_CHANNELS.find(c => c.key === tab)?.name || tab;
+    html = `<p style="font-size:0.8rem;color:#888;margin-bottom:8px">📍 ${chName} の在庫数を入力してください</p>`;
+    html += `<table><thead><tr><th>商品名</th><th>${chName} 在庫数</th></tr></thead><tbody>`;
+    PRODUCTS.forEach(p => {
+      const s = stock[p.id] || { creema:0, makabe:0, event:0, other:0, min:3 };
+      html += `<tr>
+        <td>${p.name}</td>
+        <td><input type="number" inputmode="numeric" id="fs-qty-${p.id}" value="${s[tab]||0}" min="0" style="width:80px"> 個</td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+  }
+  document.getElementById('finished-stock-content').innerHTML = html;
+}
+
 function saveFinishedStock() {
-  const stock = {};
-  PRODUCTS.forEach(p => {
-    stock[p.id] = {
-      qty: parseInt(document.getElementById(`fs-qty-${p.id}`).value) || 0,
-      min: parseInt(document.getElementById(`fs-min-${p.id}`).value) || 0,
-    };
-  });
+  const raw   = load('finished_stock', {});
+  const stock = migrateStock(raw);
+  const tab   = currentStockTab;
+
+  if (tab === 'all') {
+    // 全体タブでは最低在庫数のみ保存
+    PRODUCTS.forEach(p => {
+      const minEl = document.getElementById(`fs-min-${p.id}`);
+      if (minEl) stock[p.id].min = parseInt(minEl.value) || 0;
+    });
+  } else {
+    // 販路タブでは該当チャンネルの数量を保存
+    PRODUCTS.forEach(p => {
+      const qtyEl = document.getElementById(`fs-qty-${p.id}`);
+      if (qtyEl) stock[p.id][tab] = parseInt(qtyEl.value) || 0;
+    });
+  }
   save('finished_stock', stock);
   toast('在庫を保存しました');
-  renderInventory();
+  renderStockTable();
 }
 
 function renderMaterials() {
@@ -1591,9 +1662,12 @@ function initDefaultCosts() {
 
 function initDefaultStock() {
   const existing = load('finished_stock', null);
-  if (existing && Object.keys(existing).includes('nagi_l_1') && Object.keys(existing).includes('shizuku')) return;
-  const stockObj = existing || {};
-  PRODUCTS.forEach(p => { if (!stockObj[p.id]) stockObj[p.id] = { qty: 0, min: 3 }; });
+  // 新形式チェック（shizukuがあり、かつcreemaキーを持つ）
+  if (existing && existing['shizuku'] && typeof existing['shizuku'].creema !== 'undefined') return;
+  const stockObj = existing ? migrateStock(existing) : {};
+  PRODUCTS.forEach(p => {
+    if (!stockObj[p.id]) stockObj[p.id] = { creema:0, makabe:0, event:0, other:0, min:3 };
+  });
   save('finished_stock', stockObj);
 }
 
