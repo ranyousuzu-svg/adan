@@ -151,6 +151,7 @@
   .badge-creema { background: #fff3e0; color: #e67e22; }
   .badge-event { background: #e8f5e9; color: #2d6a4f; }
   .badge-consignment { background: #fff8e1; color: #f57f17; }
+  .badge-makabe { background: #e3f2fd; color: #1565c0; }
   .badge-other { background: #f3e5f5; color: #7b1fa2; }
 
   .alert { padding: 10px 14px; border-radius: 6px; margin-bottom: 10px; font-size: 0.85rem; }
@@ -347,8 +348,9 @@
       <div>
         <label>販路</label>
         <select id="s-channel">
-          <option value="minne">minne</option>
           <option value="creema">Creema</option>
+          <option value="makabe">真壁ちなー</option>
+          <option value="minne">minne</option>
           <option value="consignment">委託販売</option>
           <option value="event">ハンドメイドマーケット</option>
           <option value="other">その他</option>
@@ -370,8 +372,9 @@
     <h2>売上一覧</h2>
     <div class="tabs-inner">
       <button class="tab-btn active" onclick="filterSales('all',this)">すべて</button>
-      <button class="tab-btn" onclick="filterSales('minne',this)">minne</button>
       <button class="tab-btn" onclick="filterSales('creema',this)">Creema</button>
+      <button class="tab-btn" onclick="filterSales('makabe',this)">真壁ちなー</button>
+      <button class="tab-btn" onclick="filterSales('minne',this)">minne</button>
       <button class="tab-btn" onclick="filterSales('event',this)">イベント</button>
     </div>
     <div id="sales-table"></div>
@@ -567,16 +570,31 @@
 <script>
 // ====== DATA ======
 const PRODUCTS = [
-  { id: 'kumu',         name: '① Kumu（クム）四つ畳×1' },
-  { id: 'pua',          name: '② Pua（プア）リボン編み' },
-  { id: 'lana',         name: '③ Lana（ラナ）星型ひとつ' },
-  { id: 'koapaka_bar',  name: '④ Koapaka（コアパカ）DW棒状' },
-  { id: 'koapaka_ring', name: '⑤ Koapaka（コアパカ）DW輪状' },
-  { id: 'kulia',        name: '⑥ Kūlia（クーリア）四つ畳縦つなぎ' },
+  // 凪（大）
+  { id: 'nagi_l_1', name: '① 凪（大）空の青' },
+  { id: 'nagi_l_2', name: '② 凪（大）海の青' },
+  { id: 'nagi_l_3', name: '③ 凪（大）深い海' },
+  { id: 'nagi_l_4', name: '④ 凪（大）夏の緑' },
+  { id: 'nagi_l_5', name: '⑤ 凪（大）新緑' },
+  { id: 'nagi_l_6', name: '⑥ 凪（大）夏の夕陽' },
+  // 凪（小）
+  { id: 'nagi_s_1', name: '⑦ 凪（小）空の青' },
+  { id: 'nagi_s_2', name: '⑧ 凪（小）海の青' },
+  { id: 'nagi_s_3', name: '⑨ 凪（小）深い海' },
+  { id: 'nagi_s_4', name: '⑩ 凪（小）夏の緑' },
+  { id: 'nagi_s_5', name: '⑪ 凪（小）新緑' },
+  { id: 'nagi_s_6', name: '⑫ 凪（小）夏の夕陽' },
+  // フープ
+  { id: 'hoop',     name: '⑬ フープ' },
+  // リボン
+  { id: 'ribbon_1', name: '⑭ リボン〜海の青〜' },
+  { id: 'ribbon_2', name: '⑮ リボン〜空の青〜' },
+  { id: 'ribbon_3', name: '⑯ リボン〜深い海〜' },
 ];
 const CHANNELS = {
-  minne:       { name: 'minne',              fee: 0.10 },
   creema:      { name: 'Creema',             fee: 0.22 },
+  makabe:      { name: '真壁ちなー',           fee: 0.30 },
+  minne:       { name: 'minne',              fee: 0.10 },
   consignment: { name: '委託販売',            fee: 0.30 },
   event:       { name: 'ハンドメイドマーケット', fee: 0 },
   other:       { name: 'その他',              fee: 0 },
@@ -1457,26 +1475,18 @@ function initDefaultCosts() {
     { name: 'その他', cost: 27 },
     { name: '梱包', cost: 100 },
   ];
-  save('costs', {
-    kumu:         { materials: defaultMats, labor_min: 120, hourly: 1400, price: 6200 },
-    pua:          { materials: defaultMats, labor_min: 150, hourly: 1400, price: 6200 },
-    lana:         { materials: defaultMats, labor_min: 90,  hourly: 1400, price: 4500 },
-    koapaka_bar:  { materials: defaultMats, labor_min: 120, hourly: 1400, price: 5200 },
-    koapaka_ring: { materials: defaultMats, labor_min: 120, hourly: 1400, price: 5200 },
-    kulia:        { materials: defaultMats, labor_min: 120, hourly: 1400, price: 5800 },
+  const costsObj = {};
+  PRODUCTS.forEach(p => {
+    costsObj[p.id] = { materials: defaultMats, labor_min: 120, hourly: 1400, price: 5000 };
   });
+  save('costs', costsObj);
 }
 
 function initDefaultStock() {
-  if (load('finished_stock', null) && Object.keys(load('finished_stock', {})).includes('kumu')) return;
-  save('finished_stock', {
-    kumu:         { qty: 0, min: 3 },
-    pua:          { qty: 0, min: 3 },
-    lana:         { qty: 0, min: 3 },
-    koapaka_bar:  { qty: 0, min: 3 },
-    koapaka_ring: { qty: 0, min: 3 },
-    kulia:        { qty: 0, min: 3 },
-  });
+  if (load('finished_stock', null) && Object.keys(load('finished_stock', {})).includes('nagi_l_1')) return;
+  const stockObj = {};
+  PRODUCTS.forEach(p => { stockObj[p.id] = { qty: 0, min: 3 }; });
+  save('finished_stock', stockObj);
 }
 
 // ====== INIT ======
