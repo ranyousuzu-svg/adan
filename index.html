@@ -504,7 +504,7 @@
       <button class="tab-btn" onclick="switchStockTab('all',this)">📊 全体</button>
     </div>
     <div id="finished-stock-content"></div>
-    <button class="btn btn-primary mt btn-sm" onclick="saveFinishedStock()">💾 保存</button>
+    <p style="font-size:0.75rem;color:#aaa;margin-top:8px">✅ 数字を変えると自動保存されます</p>
   </div>
 
   <div class="card">
@@ -1145,7 +1145,7 @@ function renderStockTable() {
         <td>${p.name}</td>`;
       STOCK_CHANNELS.forEach(c => { html += `<td style="text-align:center">${s[c.key]||0}</td>`; });
       html += `<td style="text-align:center;font-weight:bold;color:${warn?'#e74c3c':'#2d6a4f'}">${total}</td>
-        <td><input type="number" inputmode="numeric" id="fs-min-${p.id}" value="${s.min}" min="0" style="width:55px"> 個</td>
+        <td><input type="number" inputmode="numeric" id="fs-min-${p.id}" value="${s.min}" min="0" style="width:55px" onchange="autoSaveStock()"> 個</td>
         <td>${warn ? '<span class="stock-warn">⚠️ 補充</span>' : '<span class="stock-ok">✓</span>'}</td>
       </tr>`;
     });
@@ -1159,7 +1159,7 @@ function renderStockTable() {
       const s = stock[p.id] || { creema:0, makabe:0, event:0, other:0, min:3 };
       html += `<tr>
         <td>${p.name}</td>
-        <td><input type="number" inputmode="numeric" id="fs-qty-${p.id}" value="${s[tab]||0}" min="0" style="width:80px"> 個</td>
+        <td><input type="number" inputmode="numeric" id="fs-qty-${p.id}" value="${s[tab]||0}" min="0" style="width:80px" onchange="autoSaveStock()"> 個</td>
       </tr>`;
     });
     html += `</tbody></table>`;
@@ -1167,28 +1167,26 @@ function renderStockTable() {
   document.getElementById('finished-stock-content').innerHTML = html;
 }
 
-function saveFinishedStock() {
+function autoSaveStock() {
   const raw   = load('finished_stock', {});
   const stock = migrateStock(raw);
   const tab   = currentStockTab;
-
   if (tab === 'all') {
-    // 全体タブでは最低在庫数のみ保存
     PRODUCTS.forEach(p => {
       const minEl = document.getElementById(`fs-min-${p.id}`);
       if (minEl) stock[p.id].min = parseInt(minEl.value) || 0;
     });
   } else {
-    // 販路タブでは該当チャンネルの数量を保存
     PRODUCTS.forEach(p => {
       const qtyEl = document.getElementById(`fs-qty-${p.id}`);
       if (qtyEl) stock[p.id][tab] = parseInt(qtyEl.value) || 0;
     });
   }
   save('finished_stock', stock);
-  toast('在庫を保存しました');
-  renderStockTable();
 }
+
+// 後方互換用
+function saveFinishedStock() { autoSaveStock(); }
 
 function renderMaterials() {
   const mats = load('materials', [
