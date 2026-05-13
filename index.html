@@ -335,8 +335,8 @@
         <input type="date" id="s-date">
         <label>中分類</label>
         <select id="s-mid" onchange="updateSubSelect('s-mid','s-sub-box','s-sub')">
-          <option value="凪（大）">凪（大）</option>
-          <option value="凪（小）">凪（小）</option>
+          <option value="凪">凪</option>
+          <option value="風">風</option>
           <option value="フープ">フープ</option>
           <option value="リボン">リボン</option>
           <option value="雫">雫</option>
@@ -599,43 +599,45 @@
 <script>
 // ====== DATA ======
 const PRODUCTS = [
-  // 凪（大）
-  { id: 'nagi_l_1', name: '凪（大）空の青',          mid: '凪（大）', sub: '空の青' },
-  { id: 'nagi_l_2', name: '凪（大）海の青',          mid: '凪（大）', sub: '海の青' },
-  { id: 'nagi_l_3', name: '凪（大）深い海',          mid: '凪（大）', sub: '深い海' },
-  { id: 'nagi_l_4', name: '凪（大）夏の緑',          mid: '凪（大）', sub: '夏の緑' },
-  { id: 'nagi_l_5', name: '凪（大）新緑',            mid: '凪（大）', sub: '新緑' },
-  { id: 'nagi_l_6', name: '凪（大）夏の夕陽',        mid: '凪（大）', sub: '夏の夕陽' },
-  // 凪（小）
-  { id: 'nagi_s_1', name: '凪（小）空の青',          mid: '凪（小）', sub: '空の青' },
-  { id: 'nagi_s_2', name: '凪（小）海の青',          mid: '凪（小）', sub: '海の青' },
-  { id: 'nagi_s_3', name: '凪（小）深い海',          mid: '凪（小）', sub: '深い海' },
-  { id: 'nagi_s_4', name: '凪（小）夏の緑',          mid: '凪（小）', sub: '夏の緑' },
-  { id: 'nagi_s_5', name: '凪（小）新緑',            mid: '凪（小）', sub: '新緑' },
-  { id: 'nagi_s_6', name: '凪（小）夏の夕陽',        mid: '凪（小）', sub: '夏の夕陽' },
+  // 凪
+  { id: 'nagi_l_1', name: '凪 海の青',          mid: '凪', sub: '海の青' },
+  { id: 'nagi_l_2', name: '凪 空の青',          mid: '凪', sub: '空の青' },
+  { id: 'nagi_l_3', name: '凪 浅瀬の輝き',      mid: '凪', sub: '浅瀬の輝き' },
+  { id: 'nagi_l_4', name: '凪 深海の青',        mid: '凪', sub: '深海の青' },
+  { id: 'nagi_l_5', name: '凪 新緑',            mid: '凪', sub: '新緑' },
+  { id: 'nagi_l_6', name: '凪 常夏の緑',        mid: '凪', sub: '常夏の緑' },
+  { id: 'nagi_l_7', name: '凪 夕日の赤',        mid: '凪', sub: '夕日の赤' },
+  // 風
+  { id: 'nagi_s_1', name: '風 海の青',          mid: '風', sub: '海の青' },
+  { id: 'nagi_s_2', name: '風 空の青',          mid: '風', sub: '空の青' },
+  { id: 'nagi_s_3', name: '風 浅瀬の輝き',      mid: '風', sub: '浅瀬の輝き' },
+  { id: 'nagi_s_4', name: '風 深海の青',        mid: '風', sub: '深海の青' },
+  { id: 'nagi_s_5', name: '風 新緑',            mid: '風', sub: '新緑' },
+  { id: 'nagi_s_6', name: '風 常夏の緑',        mid: '風', sub: '常夏の緑' },
+  { id: 'nagi_s_7', name: '風 夕日の赤',        mid: '風', sub: '夕日の赤' },
   // フープ
-  { id: 'hoop',     name: 'フープ',                  mid: 'フープ',   sub: '' },
+  { id: 'hoop',     name: 'フープ',             mid: 'フープ', sub: '' },
   // リボン
-  { id: 'ribbon_1', name: 'リボン〜プルメリア〜',    mid: 'リボン',   sub: 'プルメリア' },
-  { id: 'ribbon_2', name: 'リボン〜ハイビスカス〜',  mid: 'リボン',   sub: 'ハイビスカス' },
-  { id: 'ribbon_3', name: 'リボン〜海〜',            mid: 'リボン',   sub: '海' },
-  { id: 'ribbon_4', name: 'リボン〜空〜',            mid: 'リボン',   sub: '空' },
-  { id: 'ribbon_5', name: 'リボン〜ガジュマル〜',    mid: 'リボン',   sub: 'ガジュマル' },
-  { id: 'ribbon_6', name: 'リボン〜ブーゲンビレア〜',mid: 'リボン',   sub: 'ブーゲンビレア' },
-  { id: 'ribbon_7', name: 'リボン〜マンゴー〜',      mid: 'リボン',   sub: 'マンゴー' },
+  { id: 'ribbon_1', name: 'リボン〜プルメリア〜',    mid: 'リボン', sub: 'プルメリア' },
+  { id: 'ribbon_2', name: 'リボン〜ハイビスカス〜',  mid: 'リボン', sub: 'ハイビスカス' },
+  { id: 'ribbon_3', name: 'リボン〜海〜',            mid: 'リボン', sub: '海' },
+  { id: 'ribbon_4', name: 'リボン〜空〜',            mid: 'リボン', sub: '空' },
+  { id: 'ribbon_5', name: 'リボン〜ガジュマル〜',    mid: 'リボン', sub: 'ガジュマル' },
+  { id: 'ribbon_6', name: 'リボン〜ブーゲンビレア〜',mid: 'リボン', sub: 'ブーゲンビレア' },
+  { id: 'ribbon_7', name: 'リボン〜マンゴー〜',      mid: 'リボン', sub: 'マンゴー' },
   // 雫・星
-  { id: 'shizuku',  name: '雫',                      mid: '雫',       sub: '' },
-  { id: 'hoshi',    name: '星',                      mid: '星',       sub: '' },
+  { id: 'shizuku',  name: '雫',  mid: '雫', sub: '' },
+  { id: 'hoshi',    name: '星',  mid: '星', sub: '' },
 ];
 const SUB_CATEGORIES = {
-  '凪（大）': ['空の青','海の青','深い海','夏の緑','新緑','夏の夕陽'],
-  '凪（小）': ['空の青','海の青','深い海','夏の緑','新緑','夏の夕陽'],
-  'フープ':   [],
-  'リボン':   ['プルメリア','ハイビスカス','海','空','ガジュマル','ブーゲンビレア','マンゴー'],
-  '雫':       [],
-  '星':       [],
+  '凪':     ['海の青','空の青','浅瀬の輝き','深海の青','新緑','常夏の緑','夕日の赤'],
+  '風':     ['海の青','空の青','浅瀬の輝き','深海の青','新緑','常夏の緑','夕日の赤'],
+  'フープ': [],
+  'リボン': ['プルメリア','ハイビスカス','海','空','ガジュマル','ブーゲンビレア','マンゴー'],
+  '雫':     [],
+  '星':     [],
 };
-const MID_NAMES = ['凪（大）','凪（小）','フープ','リボン','雫','星'];
+const MID_NAMES = ['凪','風','フープ','リボン','雫','星'];
 const CHANNELS = {
   creema:      { name: 'Creema',             fee: 0.22 },
   makabe:      { name: '真壁ちなー',           fee: 0.20 },
@@ -1661,7 +1663,7 @@ function initDefaultCosts() {
 function initDefaultStock() {
   const existing = load('finished_stock', null);
   // 新形式チェック（shizukuがあり、かつcreemaキーを持つ）
-  if (existing && existing['shizuku'] && typeof existing['shizuku'].creema !== 'undefined') return;
+  if (existing && existing['nagi_l_7'] && typeof existing['nagi_l_7'].creema !== 'undefined') return;
   const stockObj = existing ? migrateStock(existing) : {};
   PRODUCTS.forEach(p => {
     if (!stockObj[p.id]) stockObj[p.id] = { creema:0, makabe:0, event:0, other:0, min:3 };
